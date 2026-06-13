@@ -1,0 +1,25 @@
+{
+  "name": "somnia-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for Somnia Shannon Testnet",
+  "main": "index.js",
+  "scripts": {
+    "compile": "npx hardhat compile",
+    "test": "npx hardhat test",
+    "deploy": "npx hardhat run scripts/deploy.ts --network somnia",
+    "deploy:registry": "npx hardhat run scripts/deployFollowerRegistry.ts --network somnia",
+    "deploy:agent": "npx hardhat run scripts/deployAgentManager.ts --network somnia",
+    "deploy:ausd": "npx hardhat run scripts/deployAUSD.ts --network somnia",
+    "deploy:vault": "npx hardhat run scripts/deployVaultManager.ts --network somnia"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.6.1",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "hardhat": "^2.22.4",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}
