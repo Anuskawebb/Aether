@@ -306,7 +306,7 @@ export default function Home() {
   }, [allTrades, portfolioValue, portfolioPnl, balance]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col select-none">
+    <div className="min-h-screen text-foreground flex flex-col select-none">
 
       {/* ── Navbar ─────────────────────────────────────────────────── */}
       <AppNavbar />
