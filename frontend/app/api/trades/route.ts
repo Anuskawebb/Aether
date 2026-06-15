@@ -7,9 +7,8 @@ import { getWmntPrice }  from '@/lib/price';
 
 const VAULT_MANAGER = (process.env.NEXT_PUBLIC_VAULT_MANAGER_ADDRESS ?? '') as `0x${string}`;
 
-// Block the current VaultManager was deployed at on Mantle Sepolia.
-// TODO: update once VaultManager is deployed.
-const DEPLOY_BLOCK = 0n;
+// Block the current VaultManager (0xEA364c...92efc) was deployed at on Mantle Sepolia.
+const DEPLOY_BLOCK = 39981447n;
 
 // Only scan for SKIPPED-trade events — OPEN/CLOSED trades come from the DB.
 const SKIPPED_EVENTS = [

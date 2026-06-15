@@ -17,10 +17,10 @@ import { redis }             from '@/lib/redis';
 
 const VAULT_MANAGER = (process.env.NEXT_PUBLIC_VAULT_MANAGER_ADDRESS ?? '') as `0x${string}`;
 
-// Block the current VaultManager was deployed at on Mantle Sepolia — pipeline
-// events can't exist before this, so there's no need to scan further back.
-// TODO: update once VaultManager is deployed.
-const DEPLOY_BLOCK = 0n;
+// Block the current VaultManager (0xEA364c...92efc) was deployed at on Mantle
+// Sepolia — pipeline events can't exist before this, so there's no need to
+// scan further back.
+const DEPLOY_BLOCK = 39981447n;
 
 const ADDRESS_TO_SYMBOL: Record<string, string> = {
   '0x78c1b0c915c4faa5fffa6cabf0219da63d7f4cb8': 'WMNT',
