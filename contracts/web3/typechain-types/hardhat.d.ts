@@ -98,9 +98,25 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.Greeting__factory>;
     getContractFactory(
+      name: "MockMETH",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MockMETH__factory>;
+    getContractFactory(
+      name: "MockWETH",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MockWETH__factory>;
+    getContractFactory(
       name: "MockWMNT",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MockWMNT__factory>;
+    getContractFactory(
+      name: "IERC20Min",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.IERC20Min__factory>;
+    getContractFactory(
+      name: "MultiPairAMM",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MultiPairAMM__factory>;
     getContractFactory(
       name: "IERC20Min",
       signerOrOptions?: ethers.Signer | FactoryOptions
@@ -228,10 +244,30 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.Greeting>;
     getContractAt(
+      name: "MockMETH",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.MockMETH>;
+    getContractAt(
+      name: "MockWETH",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.MockWETH>;
+    getContractAt(
       name: "MockWMNT",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
     ): Promise<Contracts.MockWMNT>;
+    getContractAt(
+      name: "IERC20Min",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.IERC20Min>;
+    getContractAt(
+      name: "MultiPairAMM",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.MultiPairAMM>;
     getContractAt(
       name: "IERC20Min",
       address: string | ethers.Addressable,
@@ -343,9 +379,25 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Greeting>;
     deployContract(
+      name: "MockMETH",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockMETH>;
+    deployContract(
+      name: "MockWETH",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockWETH>;
+    deployContract(
       name: "MockWMNT",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MockWMNT>;
+    deployContract(
+      name: "IERC20Min",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC20Min>;
+    deployContract(
+      name: "MultiPairAMM",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MultiPairAMM>;
     deployContract(
       name: "IERC20Min",
       signerOrOptions?: ethers.Signer | DeployContractOptions
@@ -473,10 +525,30 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.Greeting>;
     deployContract(
+      name: "MockMETH",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockMETH>;
+    deployContract(
+      name: "MockWETH",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockWETH>;
+    deployContract(
       name: "MockWMNT",
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MockWMNT>;
+    deployContract(
+      name: "IERC20Min",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.IERC20Min>;
+    deployContract(
+      name: "MultiPairAMM",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MultiPairAMM>;
     deployContract(
       name: "IERC20Min",
       args: any[],

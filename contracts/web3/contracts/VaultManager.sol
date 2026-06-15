@@ -165,6 +165,14 @@ contract VaultManager {
     /// @notice token address → latest price × 1e10
     mapping(address  => uint256)      public latestPrice;
 
+    /// @notice mainnet token identity → DEX-facing token address used for swaps.
+    ///         Lets `positions[].token`/allowlist/`latestPrice` keep using a
+    ///         token's canonical (e.g. Mantle Mainnet) address for identity/UI
+    ///         while the actual swap happens against whatever ERC-20 `dex`
+    ///         holds liquidity for (e.g. a Sepolia shadow token). Unmapped
+    ///         tokens swap using their own address (identity == swap venue).
+    mapping(address  => address)      public tokenMap;
+
     /// @dev position counter for unique IDs
     uint256 private _positionNonce;
 
@@ -194,6 +202,7 @@ contract VaultManager {
     event KeeperSet(address indexed follower, address indexed keeper);
     event OracleSet(address indexed oracle);
     event DexSet(address indexed dex);
+    event TokenMapped(address indexed mainnetToken, address indexed swapToken);
 
     event AllowlistAdded(bytes32 indexed vaultId, address[] tokens);
     event AllowlistRemoved(bytes32 indexed vaultId, address[] tokens);
@@ -279,6 +288,21 @@ contract VaultManager {
     function setDex(address _dex) external onlyOwner {
         dex = _dex;
         emit DexSet(_dex);
+    }
+
+    /// @notice Map a token's canonical (identity) address to the address `dex`
+    ///         actually holds liquidity for. Pass `swapToken == address(0)` to
+    ///         clear a mapping (the token then swaps using its own address).
+    function setTokenMap(address mainnetToken, address swapToken) external onlyOwner {
+        require(mainnetToken != address(0), "VM: zero token");
+        tokenMap[mainnetToken] = swapToken;
+        emit TokenMapped(mainnetToken, swapToken);
+    }
+
+    /// @dev Resolve the address `dex` should be called with for a given token identity.
+    function _swapToken(address mainnetToken) internal view returns (address) {
+        address mapped = tokenMap[mainnetToken];
+        return mapped != address(0) ? mapped : mainnetToken;
     }
 
     function transferOwnership(address newOwner) external onlyOwner {
@@ -630,9 +654,12 @@ contract VaultManager {
 
         // ── REAL SWAP: aUSD → tokenOut through FusionX ──────────────────────────
         // minOut enforces the vault's slippage tolerance against the live pool quote.
+        // `tokenOut` is the token's canonical identity address (used for the
+        // position record/allowlist/latestPrice); `_swapToken` resolves it to
+        // whatever address `dex` actually holds liquidity for.
         address[] memory path = new address[](2);
         path[0] = AUSD;
-        path[1] = tokenOut;
+        path[1] = _swapToken(tokenOut);
         uint256 expectedOut = IFusionXRouter(dex).getAmountsOut(ausdAmount, path)[1];
         uint256 minOut      = (expectedOut * (10000 - v.limits.slippageBps)) / 10000;
         IaUSD(AUSD).approve(dex, ausdAmount);
@@ -699,12 +726,13 @@ contract VaultManager {
         VaultConfig storage v = vaults[id];
 
         // ── REAL SWAP: token → aUSD through FusionX ──────────────────────────
+        address swapToken = _swapToken(pos.token);
         address[] memory path = new address[](2);
-        path[0] = pos.token;
+        path[0] = swapToken;
         path[1] = AUSD;
         uint256 expectedOut  = IFusionXRouter(dex).getAmountsOut(pos.tokenAmount, path)[1];
         uint256 minOut       = (expectedOut * (10000 - v.limits.slippageBps)) / 10000;
-        IaUSD(pos.token).approve(dex, pos.tokenAmount);
+        IaUSD(swapToken).approve(dex, pos.tokenAmount);
         uint256 ausdReceived = IFusionXRouter(dex).swapExactTokensForTokens(
             pos.tokenAmount, minOut, path, address(this), block.timestamp + 300
         )[1];
@@ -816,7 +844,7 @@ contract VaultManager {
             if (pos.status != PositionStatus.OPEN || pos.tokenAmount == 0) continue;
 
             address[] memory path = new address[](2);
-            path[0] = pos.token;
+            path[0] = _swapToken(pos.token);
             path[1] = AUSD;
             uint256 currentValue = IFusionXRouter(dex).getAmountsOut(pos.tokenAmount, path)[1];
             totalPnl += int256(currentValue) - int256(pos.ausdAllocated);

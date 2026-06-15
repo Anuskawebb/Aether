@@ -375,7 +375,7 @@ export default function Home() {
           <div className="bg-card border border-border/80 rounded-2xl p-6 animate-fade-in-up stagger-2">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-[12px] font-semibold uppercase tracking-wider text-foreground">Top Leaders · Win Rate</h3>
-              <Link href="/traders" className="text-[11px] text-accent hover:underline cursor-pointer">
+              <Link href="/discover" className="text-[11px] text-accent hover:underline cursor-pointer">
                 View all
               </Link>
             </div>
@@ -602,7 +602,7 @@ export default function Home() {
                 topTraders.map((trader, i) => (
                   <div
                     key={trader.address}
-                    onClick={() => router.push('/traders')}
+                    onClick={() => router.push('/discover')}
                     className="bg-surface/50 border border-border/60 rounded-xl p-3 flex items-center justify-between hover:border-accent/40 hover:bg-surface/80 transition-spring hover:scale-[1.02] active:scale-98 cursor-pointer"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">

@@ -100,6 +100,23 @@ async function handleLog(logEntry: any, db: Db): Promise<void> {
   }
 }
 
+/** Binary-searches for the block at which `address` first had code deployed,
+ *  so the backfill doesn't have to scan from genesis. */
+async function findDeployBlock(address: `0x${string}`, latest: bigint): Promise<bigint> {
+  let lo = 0n;
+  let hi = latest;
+  while (lo < hi) {
+    const mid  = lo + (hi - lo) / 2n;
+    const code = await client.getCode({ address, blockNumber: mid });
+    if (code && code !== '0x') {
+      hi = mid;
+    } else {
+      lo = mid + 1n;
+    }
+  }
+  return lo;
+}
+
 /** Polls VaultManager for PositionOpened/PositionClosed events and writes
  *  them to the `positions` table so the frontend can read from DB instead of RPC. */
 export function startVaultListener(db: Db): () => void {
@@ -116,17 +133,16 @@ export function startVaultListener(db: Db): () => void {
       const latest = await client.getBlockNumber();
 
       if (lastBlock === null) {
-        // First run: start from DEPLOY_BLOCK to backfill historical positions.
-        // TODO: set to the actual VaultManager deployment block on Mantle Sepolia.
-        lastBlock = 0n;
+        // First run: backfill from the contract's deployment block, not genesis.
+        lastBlock = await findDeployBlock(VAULT_MANAGER, latest);
         log('vault-listener', `starting backfill from block ${lastBlock} to ${latest}…`);
       }
 
       if (latest <= lastBlock) return;
 
       let newLogs: any[] = [];
-      for (let from = lastBlock; from <= latest; from += 1000n) {
-        const to    = from + 999n > latest ? latest : from + 999n;
+      for (let from = lastBlock; from <= latest; from += 10_000n) {
+        const to    = from + 9_999n > latest ? latest : from + 9_999n;
         const chunk = await client.getLogs({
           address:   VAULT_MANAGER,
           events:    EVENTS,

@@ -1,4 +1,4 @@
-import { sqrtPriceX96ToWmntUsd } from './price.js';
+import { sqrtPriceX96ToTokenUsd } from './price.js';
 import { STALE_BUY_MS, type PoolDef } from './config.js';
 
 export type TradeSide = 'BUY' | 'SELL';
@@ -16,42 +16,51 @@ export interface SwapLog {
 }
 
 export interface TradeIntent {
-  leader:    `0x${string}`;
-  side:      TradeSide;
-  tokenIn:   string;
-  tokenOut:  string;
-  usdValue:  number;
-  wmntPrice: number;
-  txHash:    `0x${string}`;
-  timestamp: number;  // unix ms
-  isStale:   boolean;
+  leader:      `0x${string}`;
+  side:        TradeSide;
+  tokenIn:     string;
+  tokenOut:    string;
+  usdValue:    number;
+  wmntPrice:   number;
+  txHash:      `0x${string}`;
+  timestamp:   number;  // unix ms
+  isStale:     boolean;
+  dex:         string;
+  poolAddress: `0x${string}`;
 }
 
 /**
- * Parse a Swap log for the USDe/WMNT pool.
+ * Parse a Swap log for a tracked pool.
  *
- * amount0 < 0 → token0 (USDe) leaving pool → user BUYing USDe (selling WMNT)
- * amount0 > 0 → token0 (USDe) entering pool → user SELLing USDe (buying WMNT)
+ * token0 is always the "anchor" side — either a $1-pegged stable (USDe/USDT/USDC)
+ * or WMNT (priced via `wmntPriceUsd`, a live oracle reading). token1 is the
+ * asset of interest (WMNT/WETH/mETH/...).
+ *
+ * amount0 < 0 → token0 leaving pool → user BUYing token0 (selling token1)
+ * amount0 > 0 → token0 entering pool → user SELLing token0 (buying token1)
  */
 export function parseSwapLog(
   log:  SwapLog,
   pool: PoolDef,
+  wmntPriceUsd: number,
 ): TradeIntent {
   const { token0, token1 } = pool;
 
   const ageMs = Date.now() - log.blockTime * 1000;
 
-  // WMNT price derived directly from this event's post-swap price.
-  const wmntPrice = sqrtPriceX96ToWmntUsd(log.price);
+  // USD price of token0 — $1 for stables, or the live WMNT oracle price otherwise.
+  const token0UsdPrice = token0.isStable ? 1 : wmntPriceUsd;
 
-  // side: BUY = user receives token0 (USDe), amount0 negative
+  // token1 (volatile asset) price derived from this event's post-swap price.
+  const wmntPrice = sqrtPriceX96ToTokenUsd(log.price, pool, token0UsdPrice);
+
+  // side: BUY = user receives token0, amount0 negative
   const isBuy = log.amount0 < 0n;
   const side: TradeSide = isBuy ? 'BUY' : 'SELL';
   const tokenIn  = isBuy ? token1.address : token0.address;
   const tokenOut = isBuy ? token0.address : token1.address;
 
-  // token0=USDe is $1-pegged stable — use it directly as the USD value of the swap.
-  const usdValue = Math.abs(Number(log.amount0)) / 10 ** token0.decimals;
+  const usdValue = (Math.abs(Number(log.amount0)) / 10 ** token0.decimals) * token0UsdPrice;
 
   return {
     leader:    log.recipient,
@@ -63,5 +72,7 @@ export function parseSwapLog(
     txHash:    log.txHash,
     timestamp: log.blockTime * 1000,
     isStale:   side === 'BUY' && ageMs > STALE_BUY_MS,
+    dex:         pool.dex,
+    poolAddress: pool.address,
   };
 }

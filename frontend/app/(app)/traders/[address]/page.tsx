@@ -32,6 +32,11 @@ type LeaderStats = {
   activityHeatmap?:  number[];
 };
 
+const DEX_LABELS: Record<string, string> = {
+  'agni-v3':    'Agni',
+  'fusionx-v3': 'FusionX',
+};
+
 const TokenLogo = ({ symbol }: { symbol: string }) => {
   const sym = symbol.toUpperCase();
   let src = '';
@@ -331,6 +336,11 @@ export default function TraderDetailsPage({ params }: PageProps) {
                     <span className="text-[12px] text-muted font-semibold">
                       {s.side === 'BUY' ? getSymbol(s.tokenOut) : getSymbol(s.tokenIn)}
                     </span>
+                    {s.dex && (
+                      <span className="text-[10px] uppercase font-medium px-1.5 py-0.5 rounded-full bg-foreground/5 text-subtle">
+                        {DEX_LABELS[s.dex] ?? s.dex}
+                      </span>
+                    )}
                   </div>
                   <p className="text-[10px] text-subtle mt-1">
                     Value: ${s.usdValue.toLocaleString(undefined, { maximumFractionDigits: 2 })} · Price: ${s.wmntPrice.toFixed(4)}

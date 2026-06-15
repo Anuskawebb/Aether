@@ -76,7 +76,7 @@ function DropIcon({ className }: { className?: string }) {
 
 const PILL_1_ITEMS = [
   { label: 'Dashboard', href: '/', icon: HomeIcon },
-  { label: 'Discover', href: '/traders', icon: CompassIcon },
+  { label: 'Discover', href: '/discover', icon: CompassIcon },
 ];
 
 const PILL_2_ITEMS = [

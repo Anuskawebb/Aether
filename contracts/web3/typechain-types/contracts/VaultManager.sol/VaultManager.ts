@@ -116,6 +116,8 @@ export interface VaultManagerInterface extends Interface {
       | "setKeeper"
       | "setOracle"
       | "setPrice"
+      | "setTokenMap"
+      | "tokenMap"
       | "transferOwnership"
       | "vaultId"
       | "vaultPositions"
@@ -134,6 +136,7 @@ export interface VaultManagerInterface extends Interface {
       | "PositionOpened"
       | "PriceUpdated"
       | "StrategistResponse"
+      | "TokenMapped"
       | "TradeCopied"
       | "TradeSkipped"
       | "VaultClosed"
@@ -283,6 +286,14 @@ export interface VaultManagerInterface extends Interface {
     values: [AddressLike, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "setTokenMap",
+    values: [AddressLike, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "tokenMap",
+    values: [AddressLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "transferOwnership",
     values: [AddressLike]
   ): string;
@@ -389,6 +400,11 @@ export interface VaultManagerInterface extends Interface {
   decodeFunctionResult(functionFragment: "setKeeper", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "setOracle", data: BytesLike): Result;
   decodeFunctionResult(functionFragment: "setPrice", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "setTokenMap",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(functionFragment: "tokenMap", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "transferOwnership",
     data: BytesLike
@@ -549,6 +565,19 @@ export namespace StrategistResponseEvent {
     vaultId: string;
     score: bigint;
     willExecute: boolean;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace TokenMappedEvent {
+  export type InputTuple = [mainnetToken: AddressLike, swapToken: AddressLike];
+  export type OutputTuple = [mainnetToken: string, swapToken: string];
+  export interface OutputObject {
+    mainnetToken: string;
+    swapToken: string;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -968,6 +997,14 @@ export interface VaultManager extends BaseContract {
     "nonpayable"
   >;
 
+  setTokenMap: TypedContractMethod<
+    [mainnetToken: AddressLike, swapToken: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+
+  tokenMap: TypedContractMethod<[arg0: AddressLike], [string], "view">;
+
   transferOwnership: TypedContractMethod<
     [newOwner: AddressLike],
     [void],
@@ -1221,6 +1258,16 @@ export interface VaultManager extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "setTokenMap"
+  ): TypedContractMethod<
+    [mainnetToken: AddressLike, swapToken: AddressLike],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "tokenMap"
+  ): TypedContractMethod<[arg0: AddressLike], [string], "view">;
+  getFunction(
     nameOrSignature: "transferOwnership"
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
   getFunction(
@@ -1330,6 +1377,13 @@ export interface VaultManager extends BaseContract {
     StrategistResponseEvent.InputTuple,
     StrategistResponseEvent.OutputTuple,
     StrategistResponseEvent.OutputObject
+  >;
+  getEvent(
+    key: "TokenMapped"
+  ): TypedContractEvent<
+    TokenMappedEvent.InputTuple,
+    TokenMappedEvent.OutputTuple,
+    TokenMappedEvent.OutputObject
   >;
   getEvent(
     key: "TradeCopied"
@@ -1507,6 +1561,17 @@ export interface VaultManager extends BaseContract {
       StrategistResponseEvent.InputTuple,
       StrategistResponseEvent.OutputTuple,
       StrategistResponseEvent.OutputObject
+    >;
+
+    "TokenMapped(address,address)": TypedContractEvent<
+      TokenMappedEvent.InputTuple,
+      TokenMappedEvent.OutputTuple,
+      TokenMappedEvent.OutputObject
+    >;
+    TokenMapped: TypedContractEvent<
+      TokenMappedEvent.InputTuple,
+      TokenMappedEvent.OutputTuple,
+      TokenMappedEvent.OutputObject
     >;
 
     "TradeCopied(bytes32,address,uint256,uint8)": TypedContractEvent<

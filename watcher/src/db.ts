@@ -40,14 +40,16 @@ export interface NewPaperTrade {
 }
 
 export interface LeaderSwap {
-  leader:    string;
-  side:      'BUY' | 'SELL';
-  tokenIn:   string;
-  tokenOut:  string;
-  usdValue:  number;
-  wmntPrice: number;
-  txHash?:   string;
-  timestamp: number; // unix ms
+  leader:      string;
+  side:        'BUY' | 'SELL';
+  tokenIn:     string;
+  tokenOut:    string;
+  usdValue:    number;
+  wmntPrice:   number;
+  txHash?:     string;
+  timestamp:   number; // unix ms
+  dex:         string;
+  poolAddress: string;
 }
 
 export interface Db {
@@ -183,14 +185,16 @@ export function createPrismaDb(): Db {
     async recordLeaderSwap(swap) {
       await prisma.leaderSwap.create({
         data: {
-          leader:    swap.leader.toLowerCase(),
-          side:      swap.side,
-          tokenIn:   swap.tokenIn,
-          tokenOut:  swap.tokenOut,
-          usdValue:  swap.usdValue,
-          wmntPrice: swap.wmntPrice,
-          txHash:    swap.txHash,
-          timestamp: new Date(swap.timestamp),
+          leader:      swap.leader.toLowerCase(),
+          side:        swap.side,
+          tokenIn:     swap.tokenIn,
+          tokenOut:    swap.tokenOut,
+          usdValue:    swap.usdValue,
+          wmntPrice:   swap.wmntPrice,
+          txHash:      swap.txHash,
+          timestamp:   new Date(swap.timestamp),
+          dex:         swap.dex,
+          poolAddress: swap.poolAddress,
         },
       });
     },
@@ -202,14 +206,16 @@ export function createPrismaDb(): Db {
       });
       if (!row) return null;
       return {
-        leader:    row.leader,
-        side:      row.side as 'BUY' | 'SELL',
-        tokenIn:   row.tokenIn,
-        tokenOut:  row.tokenOut,
-        usdValue:  Number(row.usdValue),
-        wmntPrice: Number(row.wmntPrice),
-        txHash:    row.txHash ?? undefined,
-        timestamp: new Date(row.timestamp).getTime(),
+        leader:      row.leader,
+        side:        row.side as 'BUY' | 'SELL',
+        tokenIn:     row.tokenIn,
+        tokenOut:    row.tokenOut,
+        usdValue:    Number(row.usdValue),
+        wmntPrice:   Number(row.wmntPrice),
+        txHash:      row.txHash ?? undefined,
+        timestamp:   new Date(row.timestamp).getTime(),
+        dex:         row.dex,
+        poolAddress: row.poolAddress,
       };
     },
 

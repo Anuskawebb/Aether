@@ -1,5 +1,5 @@
 import { createPublicClient, http } from 'viem';
-import { ALGEBRA_SWAP_ABI }           from './price.js';
+import { SWAP_ABI_BY_DEX, getCurrentWmntPrice } from './price.js';
 import { parseSwapLog }               from './parser.js';
 import { processTrade }               from './copy-engine.js';
 import {
@@ -54,7 +54,7 @@ export async function startWatcher(db: Db): Promise<() => void> {
 
   // ── Per-pool handler ──────────────────────────────────────────────────────
 
-  async function handleLog(rawLog: any, pool: PoolDef) {
+  async function handleLog(rawLog: any, pool: PoolDef, wmntPriceUsd: number) {
     const recipient = (rawLog.args.recipient as string).toLowerCase();
     const txHash    = rawLog.transactionHash ?? '0x';
     const poolLabel = `${pool.token0.symbol}/${pool.token1.symbol}`;
@@ -80,6 +80,7 @@ export async function startWatcher(db: Db): Promise<() => void> {
         blockTime,
       },
       pool,
+      wmntPriceUsd,
     );
 
     log('watcher', `[${poolLabel}] swap detected — ${intent.side} rec=${recipient.slice(0, 10)}… $${intent.usdValue.toFixed(2)} wmnt=$${intent.wmntPrice.toFixed(6)} tx=${txHash.slice(0, 14)}… block=${rawLog.blockNumber}`);
@@ -92,7 +93,9 @@ export async function startWatcher(db: Db): Promise<() => void> {
       usdValue:  intent.usdValue,
       wmntPrice: intent.wmntPrice,
       txHash,
-      timestamp: intent.timestamp,
+      timestamp:   intent.timestamp,
+      dex:         intent.dex,
+      poolAddress: intent.poolAddress,
     }).catch((e) => error('watcher', `recordLeaderSwap failed — tx=${txHash.slice(0, 14)}…`, e));
 
     if (!trackedLeaders.has(recipient)) {
@@ -206,40 +209,61 @@ export async function startWatcher(db: Db): Promise<() => void> {
 
   const lastBlocks = new Map<string, bigint>(POOLS.map((p) => [p.address, 0n]));
 
+  // On first run, backfill recent swap history per pool so /discover has
+  // trader data immediately, instead of only catching swaps going forward.
+  const POOL_BACKFILL_BLOCKS = BigInt(process.env.POOL_BACKFILL_BLOCKS ?? '50000');
+
+  // Live WMNT-USD price — refreshed once per poll cycle, used as the anchor
+  // price for pools where token0=WMNT (not a $1-stable). Falls back to the
+  // last known value if the read fails.
+  let lastKnownWmntPrice = 0;
+
   const pollTimer = setInterval(async () => {
     try {
       const latest = await httpClient.getBlockNumber();
 
+      try {
+        lastKnownWmntPrice = await getCurrentWmntPrice();
+      } catch (e) {
+        if (lastKnownWmntPrice === 0) {
+          error('watcher', `getCurrentWmntPrice failed and no cached price available`, e);
+        }
+      }
+      const wmntPriceUsd = lastKnownWmntPrice;
+
       for (const pool of POOLS) {
-        const poolLabel = `${pool.token0.symbol}/${pool.token1.symbol}`;
-        const lastBlock = lastBlocks.get(pool.address)!;
-        if (lastBlock === 0n) {
-          lastBlocks.set(pool.address, latest - 1n);
-          log('watcher', `[poll] ${poolLabel} initialised at block ${latest}`);
-          continue;
-        }
-        if (latest <= lastBlock) continue;
+        const poolLabel = `${pool.token0.symbol}/${pool.token1.symbol}@${pool.dex}`;
+        try {
+          let lastBlock = lastBlocks.get(pool.address)!;
+          if (lastBlock === 0n) {
+            lastBlock = latest > POOL_BACKFILL_BLOCKS ? latest - POOL_BACKFILL_BLOCKS : 0n;
+            log('watcher', `[poll] ${poolLabel} initialised — backfilling blocks ${lastBlock + 1n}–${latest}`);
+          }
+          if (latest <= lastBlock) continue;
 
-        let from = lastBlock + 1n;
-        let logs: any[] = [];
-        while (from <= latest) {
-          const to = from + 9_999n > latest ? latest : from + 9_999n;
-          const chunk = await httpClient.getContractEvents({
-            address:   pool.address,
-            abi:       ALGEBRA_SWAP_ABI,
-            eventName: 'Swap',
-            fromBlock: from,
-            toBlock:   to,
-          });
-          logs = logs.concat(chunk);
-          from = to + 1n;
-        }
+          let from = lastBlock + 1n;
+          let logs: any[] = [];
+          while (from <= latest) {
+            const to = from + 9_999n > latest ? latest : from + 9_999n;
+            const chunk = await httpClient.getContractEvents({
+              address:   pool.address,
+              abi:       SWAP_ABI_BY_DEX[pool.dex],
+              eventName: 'Swap',
+              fromBlock: from,
+              toBlock:   to,
+            });
+            logs = logs.concat(chunk);
+            from = to + 1n;
+          }
 
-        if (logs.length > 0) {
-          log('watcher', `[poll] ${poolLabel} blocks ${lastBlock + 1n}–${latest}: ${logs.length} swap(s)`);
+          if (logs.length > 0) {
+            log('watcher', `[poll] ${poolLabel} blocks ${lastBlock + 1n}–${latest}: ${logs.length} swap(s)`);
+          }
+          for (const l of logs) await handleLog(l, pool, wmntPriceUsd).catch(() => {});
+          lastBlocks.set(pool.address, latest);
+        } catch (e) {
+          error('watcher', `[poll] ${poolLabel} pool poll failed`, e);
         }
-        for (const l of logs) await handleLog(l, pool).catch(() => {});
-        lastBlocks.set(pool.address, latest);
       }
     } catch (e: any) {
       error('watcher', `HTTP poll cycle failed`, e);

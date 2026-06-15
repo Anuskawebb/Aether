@@ -30,18 +30,21 @@ model Follow {
 }
 
 model LeaderSwap {
-  id         String   @id @default(uuid())
-  leader     String
-  side       String
-  tokenIn    String   @map("token_in")
-  tokenOut   String   @map("token_out")
-  usdValue   Decimal  @map("usd_value")  @db.Decimal(20, 6)
-  wmntPrice Decimal  @map("wmnt_price") @db.Decimal(20, 10)
-  txHash     String?  @map("tx_hash")
-  timestamp  DateTime
-  createdAt  DateTime @default(now()) @map("created_at")
+  id          String   @id @default(uuid())
+  leader      String
+  side        String
+  tokenIn     String   @map("token_in")
+  tokenOut    String   @map("token_out")
+  usdValue    Decimal  @map("usd_value")  @db.Decimal(20, 6)
+  wmntPrice   Decimal  @map("wmnt_price") @db.Decimal(20, 10)
+  txHash      String?  @map("tx_hash")
+  timestamp   DateTime
+  createdAt   DateTime @default(now()) @map("created_at")
+  dex         String   @default("agni-v3")
+  poolAddress String   @default("") @map("pool_address")
 
   @@index([leader, timestamp(sort: Desc)])
+  @@index([dex])
   @@map("leader_swaps")
 }
 

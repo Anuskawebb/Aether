@@ -54,6 +54,8 @@ const TokenLogo = ({ symbol }: { symbol: string }) => {
 
 const AVAILABLE_TOKENS = [
   { symbol: 'WMNT', address: MAINNET_TOKENS['WMNT'] as `0x${string}` },
+  { symbol: 'WETH', address: MAINNET_TOKENS['WETH'] as `0x${string}` },
+  { symbol: 'mETH', address: MAINNET_TOKENS['mETH'] as `0x${string}` },
   { symbol: 'USDC', address: MAINNET_TOKENS['USDC'] as `0x${string}` },
   { symbol: 'USDe', address: MAINNET_TOKENS['USDe'] as `0x${string}` },
   { symbol: 'USDT', address: MAINNET_TOKENS['USDT'] as `0x${string}` },
@@ -86,6 +88,8 @@ function CreateAgent({ leaderAddress }: { leaderAddress: `0x${string}` }) {
 
   const [selected, setSelected] = useState<Record<string, boolean>>({
     [MAINNET_TOKENS['WMNT']]: true,
+    [MAINNET_TOKENS['WETH']]: true,
+    [MAINNET_TOKENS['mETH']]: false,
     [MAINNET_TOKENS['USDC']]: true,
     [MAINNET_TOKENS['USDe']]: false,
     [MAINNET_TOKENS['USDT']]: false,

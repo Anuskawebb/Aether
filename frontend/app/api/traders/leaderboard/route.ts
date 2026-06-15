@@ -9,6 +9,8 @@ const WINDOWS: Record<string, number> = {
   '6h':  6  * 60 * 60 * 1000,
   '12h': 12 * 60 * 60 * 1000,
   '24h': 24 * 60 * 60 * 1000,
+  '7d':  7  * 24 * 60 * 60 * 1000,
+  '30d': 30 * 24 * 60 * 60 * 1000,
 };
 
 export async function GET(req: Request) {
@@ -43,7 +45,7 @@ export async function GET(req: Request) {
   // Fetch latest swap + buy/sell breakdown per trader
   const leaders = rows.map((r) => r.leader);
 
-  const [latestSwaps, sideCounts, closedByLeader, winsByLeader] = await Promise.all([
+  const [latestSwaps, sideCounts, closedByLeader, winsByLeader, dexRows] = await Promise.all([
     // Most recent swap for each leader
     Promise.all(
       leaders.map((leader) =>
@@ -73,6 +75,11 @@ export async function GET(req: Request) {
       where: { leader: { in: leaders }, status: 'CLOSED', pnl: { gt: 0 } },
       _count: { _all: true },
     }),
+    // Distinct DEXes a leader has traded on within the window
+    prisma.leaderSwap.groupBy({
+      by:    ['leader', 'dex'],
+      where: { leader: { in: leaders }, timestamp: { gte: since } },
+    }),
   ]);
 
   // Build side count map
@@ -92,6 +99,13 @@ export async function GET(req: Request) {
     winsMap[row.leader] = row._count._all;
   }
 
+  // Build distinct DEX list per leader
+  const dexMap: Record<string, string[]> = {};
+  for (const row of dexRows) {
+    if (!dexMap[row.leader]) dexMap[row.leader] = [];
+    if (!dexMap[row.leader].includes(row.dex)) dexMap[row.leader].push(row.dex);
+  }
+
   const traders = rows.map((row, i) => {
     const closed   = closedMap[row.leader]?.count ?? 0;
     const wins     = winsMap[row.leader] ?? 0;
@@ -106,6 +120,7 @@ export async function GET(req: Request) {
       lastPrice:          latestSwaps[i]?.wmntPrice ? Number(latestSwaps[i]!.wmntPrice) : null,
       lastVolume:         latestSwaps[i]?.usdValue   ? Number(latestSwaps[i]!.usdValue) : null,
       lastSeen:           latestSwaps[i]?.timestamp  ?? null,
+      dexes:              dexMap[row.leader] ?? [],
       winRate:            closed > 0 ? Math.round((wins / closed) * 100) : null,
       closedPositions:    closed,
       totalPnlGenerated:  closedMap[row.leader]?.pnl ?? 0,
