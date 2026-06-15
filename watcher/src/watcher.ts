@@ -9,7 +9,7 @@ import {
   callExecuteCopyTrade,
   getVaultForScore,
 } from './keeper.js';
-import { scoreTrade }                  from './scorer.js';
+import { scoreTrade, scoreTradeAI }    from './scorer.js';
 import { claimSwap }                  from './dedup.js';
 import { incrStat, STAT_EVALUATED }   from './stats.js';
 import { mantleMainnet, POOLS, type PoolDef } from './config.js';
@@ -163,13 +163,21 @@ export async function startWatcher(db: Db): Promise<() => void> {
               log('watcher', `keeper skip follower=${follower.slice(0, 10)}… — vault not active`);
               continue;
             }
-            score = scoreTrade({
+            const scoreInput = {
               usdValue:    intent.usdValue,
               tradeAgeSec: Math.floor((Date.now() - intent.timestamp) / 1000),
               riskLevel:   vc.riskLevel,
               ausdLocked:  vc.ausdLocked,
               freeBalance: vc.freeBalance,
-            });
+            };
+            const aiResult = await scoreTradeAI(scoreInput);
+            if (aiResult) {
+              score = aiResult.score;
+              log('watcher', `[ai-score] follower=${follower.slice(0, 10)}… score=${score} — ${aiResult.reason}`);
+            } else {
+              score = scoreTrade(scoreInput);
+              log('watcher', `[heuristic-score] follower=${follower.slice(0, 10)}… score=${score}`);
+            }
           } catch (e) {
             error('watcher', `scoring failed — follower=${follower.slice(0, 10)}… leader=${recipient.slice(0, 10)}…`, e);
             continue;

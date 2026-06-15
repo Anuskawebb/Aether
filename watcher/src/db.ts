@@ -76,6 +76,8 @@ export interface Db {
     ausdcAllocated: number;
     entryPrice:     number;
     stopLossPct:    number;
+    riskLevel:      number;
+    openedAt:       Date;
   }[]>;
   findVaultByOnChainId(onChainVaultId: string): Promise<{ id: string; follower: string; leader: string } | null>;
   upsertOnChainPosition(data: {
@@ -296,7 +298,7 @@ export function createPrismaDb(): Db {
     async getOpenOnChainPositions() {
       const rows = await prisma.position.findMany({
         where:   { status: 'OPEN', onChainPositionId: { not: null } },
-        include: { vault: { select: { stopLossPct: true } } },
+        include: { vault: { select: { stopLossPct: true, riskLevel: true } } },
       });
       return rows.map((r) => ({
         onChainPositionId: r.onChainPositionId!,
@@ -306,6 +308,8 @@ export function createPrismaDb(): Db {
         ausdcAllocated:    Number(r.ausdcAllocated),
         entryPrice:        Number(r.entryPrice),
         stopLossPct:       r.vault.stopLossPct,
+        riskLevel:         r.vault.riskLevel,
+        openedAt:          r.openedAt,
       }));
     },
 

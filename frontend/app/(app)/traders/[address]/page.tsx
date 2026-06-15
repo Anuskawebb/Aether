@@ -100,6 +100,8 @@ export default function TraderDetailsPage({ params }: PageProps) {
   const [copied,   setCopied]   = useState(false);
 
   const [inference,        setInference]        = useState<string | null>(null);
+  const [recommendation,   setRecommendation]   = useState<'follow' | 'caution' | 'avoid' | null>(null);
+  const [confidence,       setConfidence]       = useState<number | null>(null);
   const [inferenceLoading, setInferenceLoading] = useState(true);
 
   useEffect(() => {
@@ -114,7 +116,11 @@ export default function TraderDetailsPage({ params }: PageProps) {
     if (!leaderAddress) return;
     fetch(`/api/traders/${leaderAddress}/inference`)
       .then((r) => r.json())
-      .then((d) => setInference(d.summary ?? null))
+      .then((d) => {
+        setInference(d.summary ?? null);
+        setRecommendation(d.recommendation ?? null);
+        setConfidence(d.confidence ?? null);
+      })
       .catch(() => setInference(null))
       .finally(() => setInferenceLoading(false));
   }, [leaderAddress]);
@@ -292,6 +298,19 @@ export default function TraderDetailsPage({ params }: PageProps) {
         <div className="pt-5">
           <div className="flex items-center gap-1.5 mb-3">
             <span className="text-[10px] uppercase tracking-wider text-foreground/40">Analysis Generated</span>
+            {!inferenceLoading && recommendation && (
+              <span
+                className={`text-[10px] font-medium uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                  recommendation === 'follow'
+                    ? 'bg-emerald-400/10 text-emerald-400'
+                    : recommendation === 'caution'
+                    ? 'bg-amber-400/10 text-amber-400'
+                    : 'bg-red-400/10 text-red-400'
+                }`}
+              >
+                {recommendation}{confidence !== null ? ` · ${confidence}%` : ''}
+              </span>
+            )}
           </div>
           {inferenceLoading ? (
             <div className="space-y-2">

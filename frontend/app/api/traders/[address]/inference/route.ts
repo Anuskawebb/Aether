@@ -43,7 +43,7 @@ export async function GET(
   ]);
 
   if (swaps.length < 5) {
-    const result = { summary: null, reason: 'not_enough_data' };
+    const result = { summary: null, recommendation: null, confidence: null, reason: 'not_enough_data' };
     try { await redis.set(cacheKey, result, { ex: CACHE_TTL }); } catch { /* non-fatal */ }
     return NextResponse.json(result);
   }
@@ -104,11 +104,19 @@ export async function GET(
     sampleSize: swaps.length,
   };
 
-  const summary = await generateSummary(address, stats);
+  const { summary, recommendation, confidence } = await generateSummary(address, stats);
 
-  const result = { summary, stats };
+  const result = { summary, recommendation, confidence, stats };
   try { await redis.set(cacheKey, result, { ex: CACHE_TTL }); } catch { /* non-fatal */ }
   return NextResponse.json(result);
+}
+
+export type Recommendation = 'follow' | 'caution' | 'avoid';
+
+export interface InferenceSummary {
+  summary:        string;
+  recommendation: Recommendation | null;
+  confidence:     number | null;
 }
 
 async function generateSummary(address: string, stats: {
@@ -121,18 +129,23 @@ async function generateSummary(address: string, stats: {
   winRate: number | null;
   closedCount: number;
   sampleSize: number;
-}): Promise<string> {
-  const fallback =
-    `This trader is most active around ${stats.mostActiveHour}:00 UTC, primarily trading the ${stats.mostTradedPair} pair ` +
-    `with an average trade size of $${stats.avgTradeSize.toLocaleString()}. ` +
-    `Their activity has been ${stats.trend} over recent trades (${stats.buys} buys vs ${stats.sells} sells)` +
-    (stats.winRate !== null ? `, and copy-traders following them have a ${stats.winRate}% win rate over ${stats.closedCount} closed positions.` : '.');
+}): Promise<InferenceSummary> {
+  const fallback: InferenceSummary = {
+    summary:
+      `This trader is most active around ${stats.mostActiveHour}:00 UTC, primarily trading the ${stats.mostTradedPair} pair ` +
+      `with an average trade size of $${stats.avgTradeSize.toLocaleString()}. ` +
+      `Their activity has been ${stats.trend} over recent trades (${stats.buys} buys vs ${stats.sells} sells)` +
+      (stats.winRate !== null ? `, and copy-traders following them have a ${stats.winRate}% win rate over ${stats.closedCount} closed positions.` : '.'),
+    recommendation: null,
+    confidence:     null,
+  };
 
   const openaiKey = process.env.OPENAI_API_KEY;
   if (!openaiKey) return fallback;
 
   const prompt =
-    `You are analyzing the on-chain trading behavior of a wallet (${address.slice(0, 6)}…${address.slice(-4)}) ` +
+    `You are the leader-analysis agent for Aether, an on-chain copy-trading platform on Mantle. ` +
+    `Analyze the on-chain trading behavior of a wallet (${address.slice(0, 6)}…${address.slice(-4)}) ` +
     `on Mantle Mainnet, based on its last ${stats.sampleSize} swaps.\n\n` +
     `Stats:\n` +
     `- Most active hour (UTC): ${stats.mostActiveHour}:00\n` +
@@ -143,8 +156,8 @@ async function generateSummary(address: string, stats: {
     (stats.winRate !== null
       ? `- Copy-trade win rate: ${stats.winRate}% over ${stats.closedCount} closed positions\n`
       : '') +
-    `\nWrite a 2-3 sentence natural-language summary of this trader's behavior for someone deciding whether to copy-trade them. ` +
-    `Be specific and data-driven. Do not use markdown.`;
+    `\nRespond with strict JSON: {"summary": "<2-3 sentence data-driven summary of this trader's behavior for someone ` +
+    `deciding whether to copy-trade them, no markdown>", "recommendation": "follow"|"caution"|"avoid", "confidence": <integer 0-100>}.`;
 
   try {
     const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -156,14 +169,29 @@ async function generateSummary(address: string, stats: {
       body: JSON.stringify({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
-        max_tokens: 150,
-        temperature: 0.6,
+        response_format: { type: 'json_object' },
+        max_tokens: 200,
+        temperature: 0.4,
       }),
     });
     if (res.ok) {
       const data = await res.json();
       const text = data.choices?.[0]?.message?.content?.trim();
-      if (text) return text;
+      if (text) {
+        const parsed = JSON.parse(text);
+        const recommendation: Recommendation | null =
+          parsed.recommendation === 'follow' || parsed.recommendation === 'caution' || parsed.recommendation === 'avoid'
+            ? parsed.recommendation
+            : null;
+        const confidence = Number(parsed.confidence);
+        if (typeof parsed.summary === 'string' && parsed.summary) {
+          return {
+            summary: parsed.summary,
+            recommendation,
+            confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(100, Math.round(confidence))) : null,
+          };
+        }
+      }
     } else {
       console.error(`[inference] OpenAI API returned error status: ${res.status}`);
     }

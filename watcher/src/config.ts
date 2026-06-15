@@ -125,6 +125,11 @@ export const POOL = {
 export const VAULT_MANAGER_ADDRESS = (process.env.VAULT_MANAGER_ADDRESS ?? '') as `0x${string}`;
 export const KEEPER_PRIVATE_KEY    = (process.env.KEEPER_PRIVATE_KEY    ?? '') as `0x${string}`;
 
+// ── Agentic decisions (OpenAI) ────────────────────────────────────────────────
+// Used by ai.ts for the copy-score and risk-management agents. If unset, both
+// fall back to deterministic logic (scorer.ts / pnl-updater.ts hard thresholds).
+export const OPENAI_API_KEY = process.env.OPENAI_API_KEY ?? '';
+
 // ── Copy-trade config ─────────────────────────────────────────────────────────
 
 export const DEFAULT_COPY_PCT = Number(process.env.DEFAULT_COPY_PCT ?? 20);

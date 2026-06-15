@@ -2,6 +2,7 @@ import { getCurrentWmntPrice } from './price.js';
 import { callSetPrice, callClosePosition } from './keeper.js';
 import { log, warn, error } from './logger.js';
 import { markStopLoss } from './stop-loss-registry.js';
+import { assessPositionRiskAI } from './risk-agent.js';
 import type { Db } from './db.js';
 
 // Global fallback (env STOP_LOSS_PCT) used only for startup log; actual threshold is per-vault
@@ -16,6 +17,37 @@ const TOKEN_ADDRESS: Record<string, `0x${string}`> = {
 // Prevent duplicate concurrent closes for the same position
 const closingSet = new Set<string>();
 
+async function triggerClose(
+  label:      string, // 'STOP-LOSS' | 'AI-RISK'
+  logTag:     string, // 'stop-loss' | 'risk-agent'
+  positionId: string,
+  token:      string,
+  follower:   string,
+  pct:        number,
+  priceUsd:   number,
+  reason:     string,
+): Promise<void> {
+  const tokenAddr = TOKEN_ADDRESS[token];
+  if (!tokenAddr) {
+    error('pnl', `${logTag}: no token address mapping for ${token} — cannot close posId=${positionId.slice(0, 10)}…`);
+    return;
+  }
+
+  warn('pnl', `${label} triggered — follower=${follower.slice(0, 10)}…  token=${token}  drawdown=${(pct * 100).toFixed(1)}%  posId=${positionId.slice(0, 10)}…  reason="${reason}"`);
+
+  try {
+    log('pnl', `${logTag}: pushing on-chain price for ${token}…`);
+    await callSetPrice(tokenAddr, BigInt(Math.round(priceUsd * 1e10)));
+    log('pnl', `${logTag}: price set — closing posId=${positionId.slice(0, 10)}…`);
+    // Register before the tx so vault-listener stamps STOP_LOSS when it sees PositionClosed
+    markStopLoss(positionId);
+    await callClosePosition(positionId as `0x${string}`);
+    log('pnl', `${logTag}: position closed ✓  posId=${positionId.slice(0, 10)}…`);
+  } finally {
+    closingSet.delete(positionId);
+  }
+}
+
 async function triggerStopLoss(
   positionId: string,
   token:      string,
@@ -23,25 +55,18 @@ async function triggerStopLoss(
   pct:        number,
   priceUsd:   number
 ): Promise<void> {
-  const tokenAddr = TOKEN_ADDRESS[token];
-  if (!tokenAddr) {
-    error('pnl', `stop-loss: no token address mapping for ${token} — cannot close posId=${positionId.slice(0, 10)}…`);
-    return;
-  }
+  return triggerClose('STOP-LOSS', 'stop-loss', positionId, token, follower, pct, priceUsd, `drawdown exceeded ${(pct * 100).toFixed(1)}%`);
+}
 
-  warn('pnl', `STOP-LOSS triggered — follower=${follower.slice(0, 10)}…  token=${token}  drawdown=${(pct * 100).toFixed(1)}%  posId=${positionId.slice(0, 10)}…`);
-
-  try {
-    log('pnl', `stop-loss: pushing on-chain price for ${token}…`);
-    await callSetPrice(tokenAddr, BigInt(Math.round(priceUsd * 1e10)));
-    log('pnl', `stop-loss: price set — closing posId=${positionId.slice(0, 10)}…`);
-    // Register before the tx so vault-listener stamps STOP_LOSS when it sees PositionClosed
-    markStopLoss(positionId);
-    await callClosePosition(positionId as `0x${string}`);
-    log('pnl', `stop-loss: position closed ✓  posId=${positionId.slice(0, 10)}…`);
-  } finally {
-    closingSet.delete(positionId);
-  }
+async function triggerAIRiskClose(
+  positionId: string,
+  token:      string,
+  follower:   string,
+  pct:        number,
+  priceUsd:   number,
+  reason:     string,
+): Promise<void> {
+  return triggerClose('AI-RISK', 'risk-agent', positionId, token, follower, pct, priceUsd, reason);
 }
 
 /** Polls open on-chain positions every 60s, updates token prices in DB,
@@ -101,7 +126,7 @@ export function startPnlUpdater(db: Db): () => void {
           warn('pnl', `large swing — follower=${pos.follower.slice(0, 10)}… ${(pct * 100).toFixed(1)}%`);
         }
 
-        // ── Stop-loss (per-vault threshold from DB) ───────────────────────
+        // ── Stop-loss (per-vault threshold from DB) — hard safety floor ────
         const stopLossThreshold = pos.stopLossPct / 100;
         if (pct < -stopLossThreshold) {
           if (closingSet.has(pos.onChainPositionId)) {
@@ -114,6 +139,37 @@ export function startPnlUpdater(db: Db): () => void {
             error('pnl', `stop-loss execution failed for posId=${pos.onChainPositionId.slice(0, 10)}…`, e);
             closingSet.delete(pos.onChainPositionId);
           });
+          continue;
+        }
+
+        // ── AI risk-management agent — "watch zone" early closes ──────────
+        // Past half the stop-loss threshold but not yet past it: ask the AI
+        // risk agent whether to close early. No-ops if OPENAI_API_KEY unset.
+        if (pct < -stopLossThreshold * 0.5) {
+          if (closingSet.has(pos.onChainPositionId)) {
+            log('pnl', `risk-agent: close already in progress for posId=${pos.onChainPositionId.slice(0, 10)}…`);
+            continue;
+          }
+          const heldForMinutes = (Date.now() - pos.openedAt.getTime()) / 60_000;
+          const assessment = await assessPositionRiskAI({
+            token:          pos.token,
+            entryPrice:     pos.entryPrice,
+            currentPrice,
+            pnlPct:         pct,
+            riskLevel:      pos.riskLevel,
+            stopLossPct:    pos.stopLossPct,
+            heldForMinutes,
+          });
+          if (assessment) {
+            log('pnl', `[risk-agent] follower=${pos.follower.slice(0, 10)}… posId=${pos.onChainPositionId.slice(0, 10)}… action=${assessment.action} — ${assessment.reason}`);
+            if (assessment.action === 'close') {
+              closingSet.add(pos.onChainPositionId);
+              triggerAIRiskClose(pos.onChainPositionId, pos.token, pos.follower, pct, currentPrice, assessment.reason).catch((e) => {
+                error('pnl', `risk-agent close failed for posId=${pos.onChainPositionId.slice(0, 10)}…`, e);
+                closingSet.delete(pos.onChainPositionId);
+              });
+            }
+          }
         }
       }
     } catch (e) {
