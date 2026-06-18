@@ -1,6 +1,6 @@
 import { db } from '../client.js';
 import { tokenDiscoveryQueue, type TokenDiscoveryQueue } from '../schema/token-discovery-queue.js';
-import { eq, and, lt } from 'drizzle-orm';
+import { eq, and, lt, sql } from 'drizzle-orm';
 
 export class TokenDiscoveryQueueRepository {
   /**
@@ -15,6 +15,19 @@ export class TokenDiscoveryQueueRepository {
         resolved: false,
       })
       .onConflictDoNothing();
+  }
+
+  /**
+   * Bulk enqueue — inserts all addresses in a single query, ignoring duplicates.
+   */
+  static async enqueueTokens(addresses: string[]): Promise<void> {
+    if (addresses.length === 0) return;
+    const values = addresses.map((addr) => ({
+      address: addr.toLowerCase(),
+      attempts: 0,
+      resolved: false,
+    }));
+    await db.insert(tokenDiscoveryQueue).values(values).onConflictDoNothing();
   }
 
   /**
@@ -47,15 +60,9 @@ export class TokenDiscoveryQueueRepository {
    * Increments the processing attempts counter for a token in the queue.
    */
   static async incrementAttempts(address: string): Promise<void> {
-    // Find current attempts
-    const entry = await db.query.tokenDiscoveryQueue.findFirst({
-      where: eq(tokenDiscoveryQueue.address, address.toLowerCase()),
-    });
-    const currentAttempts = entry ? entry.attempts : 0;
-
     await db.update(tokenDiscoveryQueue)
       .set({
-        attempts: currentAttempts + 1,
+        attempts: sql`${tokenDiscoveryQueue.attempts} + 1`,
         lastAttemptedAt: new Date(),
       })
       .where(eq(tokenDiscoveryQueue.address, address.toLowerCase()));

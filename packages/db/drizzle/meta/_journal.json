@@ -8,6 +8,20 @@
       "when": 1781696315672,
       "tag": "0000_early_xavin",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1781699638272,
+      "tag": "0001_first_virginia_dare",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1781708722556,
+      "tag": "0002_certain_iron_monger",
+      "breakpoints": true
     }
   ]
 }

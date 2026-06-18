@@ -22,12 +22,14 @@ import * as tradesSchema from './schema/trades.js';
 import * as tokensSchema from './schema/tokens.js';
 import * as indexerStateSchema from './schema/indexer-state.js';
 import * as tokenDiscoveryQueueSchema from './schema/token-discovery-queue.js';
+import * as walletPositionsSchema from './schema/wallet-positions.js';
 
 const schema = {
   ...tradesSchema,
   ...tokensSchema,
   ...indexerStateSchema,
   ...tokenDiscoveryQueueSchema,
+  ...walletPositionsSchema,
 };
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -55,9 +57,12 @@ export * from './schema/trades.js';
 export * from './schema/tokens.js';
 export * from './schema/indexer-state.js';
 export * from './schema/token-discovery-queue.js';
+export * from './schema/wallet-positions.js';
 export * from './repositories/trade-repository.js';
 export * from './repositories/token-repository.js';
 export * from './repositories/indexer-state-repository.js';
 export * from './repositories/token-discovery-queue-repository.js';
+export * from './repositories/position-repository.js';
 export * from './services/token-metadata.js';
+export * from './services/position-builder.js';
 export { queryClient };

@@ -15,13 +15,18 @@ export class TradeRepository {
 
   /**
    * Inserts multiple trades in a batch.
-   * Duplicate trades will be ignored.
+   * Duplicate trades are silently skipped (ON CONFLICT DO NOTHING).
+   * Returns the tx_hash of each row that was actually inserted — callers
+   * that apply incremental position updates MUST use this set so that
+   * skipped duplicates don't get double-counted.
    */
-  static async insertTrades(tradesList: InsertTrade[]): Promise<void> {
-    if (tradesList.length === 0) return;
-    await db.insert(trades)
+  static async insertTrades(tradesList: InsertTrade[]): Promise<string[]> {
+    if (tradesList.length === 0) return [];
+    const inserted = await db.insert(trades)
       .values(tradesList)
-      .onConflictDoNothing();
+      .onConflictDoNothing()
+      .returning({ txHash: trades.txHash });
+    return inserted.map((r) => r.txHash);
   }
 
   /**

@@ -18,9 +18,7 @@ import { writeFileSync } from 'fs';
 import { getLatestBlock } from '../chains/bsc.js';
 import { BlockProcessor } from '../processor.js';
 import { ParserRegistry } from '../parsers/registry.js';
-import { pancakeswapV2Parser } from '../parsers/pancakeswap-v2.js';
-import { pancakeswapV3Parser } from '../parsers/pancakeswap-v3.js';
-import { pancakeswapV4Parser } from '../parsers/pancakeswap-v4.js';
+import { DEX_PARSERS } from '../parsers/index.js';
 import { resolveTokenMeta } from '../cache/token-cache.js';
 import { formatAmount } from '../tokens/registry.js';
 import type { IndexedBlock, NormalizedTrade } from '../types/index.js';
@@ -150,10 +148,10 @@ async function main(): Promise<void> {
 
   console.log(`\nValidator — scanning blocks ${fromBlock}–${toBlock} (${toBlock - fromBlock + 1} blocks)\n`);
 
-  const registry = new ParserRegistry()
-    .register(pancakeswapV2Parser)
-    .register(pancakeswapV3Parser)
-    .register(pancakeswapV4Parser);
+  const registry = new ParserRegistry();
+  for (const parser of DEX_PARSERS) {
+    registry.register(parser);
+  }
 
   const processor = new BlockProcessor(handler, registry, {
     batchSize:          50,

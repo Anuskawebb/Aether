@@ -123,7 +123,9 @@ export class BlockProcessor {
   // ── Per-block pipeline ──────────────────────────────────────────────────────
 
   private async processBlock(block: IndexedBlock): Promise<void> {
+    const tExtract0 = Date.now();
     const trades = await this.extractTrades(block);
+    const extractMs = Date.now() - tExtract0;
 
     try {
       await this.handler(block, trades);
@@ -131,10 +133,15 @@ export class BlockProcessor {
     } catch (err) {
       logger.error('Handler failed — block not checkpointed', {
         blockNumber: block.number.toString(),
-        error: err instanceof Error ? err.message : String(err),
+        error:       err instanceof Error ? err.message : String(err),
       });
       throw err;
     }
+
+    logger.debug('Block extract timing', {
+      block:     block.number.toString(),
+      extractMs, // receipt fetch + parsing combined
+    });
   }
 
   /**

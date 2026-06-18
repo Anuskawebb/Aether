@@ -14,13 +14,17 @@ async function main() {
   const mockTrade = {
     txHash: '0x1111111111111111111111111111111111111111111111111111111111111111',
     blockNumber: 40000000n,
+    logIndex: 5,
     timestamp: new Date(),
     wallet: mockWallet,
     dex: 'pancakeswap-v3' as const,
+    pairAddress: '0x36696169c63e42cd08ce11f5deebbcebae652050',
     tokenInAddress: mockTokenIn,
     tokenOutAddress: mockTokenOut,
     tokenInSymbol: 'WBNB',
     tokenOutSymbol: 'USDT',
+    tokenInDecimals: 18,
+    tokenOutDecimals: 18,
     amountIn: '1000000000000000000', // 1 WBNB
     amountOut: '600000000', // 600 USDT
   };

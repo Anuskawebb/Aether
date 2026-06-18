@@ -127,6 +127,7 @@ export const pancakeswapV4Parser: EventParser = {
     return {
       txHash:           event.txHash,
       blockNumber:      event.blockNumber,
+      logIndex:         event.logIndex,
       blockTimestampMs: context.blockTimestampMs,
       wallet:           event.wallet,
       contractAddress:  event.contractAddress,

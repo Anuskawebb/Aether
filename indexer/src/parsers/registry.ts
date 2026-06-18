@@ -26,7 +26,8 @@ export class ParserRegistry {
   async parse(event: RawEvent, context: ParseContext): Promise<RawSwap | null> {
     for (const parser of this.parsers) {
       if (!parser.canParse(event)) continue;
-      return parser.parse(event, context);
+      const res = await parser.parse(event, context);
+      if (res !== null) return res;
     }
     return null;
   }

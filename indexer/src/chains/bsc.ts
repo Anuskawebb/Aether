@@ -108,17 +108,34 @@ export async function getTransactionReceipt(
   return bscClient.getTransactionReceipt({ hash: txHash });
 }
 
+// ── Receipt stats (reset per getTransactionReceipts call) ────────────────────
+
+export interface ReceiptStats {
+  total:      number;
+  succeeded:  number;
+  failed:     number;
+  failed403:  number;
+  failedOther: number;
+}
+
+export let lastReceiptStats: ReceiptStats = {
+  total: 0, succeeded: 0, failed: 0, failed403: 0, failedOther: 0,
+};
+
 /**
  * Fetches receipts for a list of transaction hashes in batched concurrent
  * windows. Skips failed individual receipts (logs a warning) so one bad tx
- * does not abort the whole block.
+ * does not abort the whole block. Updates `lastReceiptStats` for the caller.
  */
 export async function getTransactionReceipts(
   txHashes: readonly `0x${string}`[],
   concurrency: number,
 ): Promise<TransactionReceipt[]> {
+  lastReceiptStats = { total: 0, succeeded: 0, failed: 0, failed403: 0, failedOther: 0 };
+
   if (txHashes.length === 0) return [];
 
+  lastReceiptStats.total = txHashes.length;
   const results: TransactionReceipt[] = [];
 
   for (let i = 0; i < txHashes.length; i += concurrency) {
@@ -131,12 +148,16 @@ export async function getTransactionReceipts(
     for (const outcome of settled) {
       if (outcome.status === 'fulfilled') {
         results.push(outcome.value);
+        lastReceiptStats.succeeded++;
       } else {
-        logger.warn('Receipt fetch failed — skipping tx', {
-          error: outcome.reason instanceof Error
-            ? outcome.reason.message
-            : String(outcome.reason),
-        });
+        const msg = outcome.reason instanceof Error
+          ? outcome.reason.message
+          : String(outcome.reason);
+        const is403 = msg.includes('403');
+        lastReceiptStats.failed++;
+        if (is403) lastReceiptStats.failed403++;
+        else        lastReceiptStats.failedOther++;
+        logger.warn('Receipt fetch failed — skipping tx', { error: msg });
       }
     }
   }

@@ -1,8 +1,7 @@
 import { bscClient } from '../chains/bsc.js';
 import { V4_SWAP_TOPIC } from '../parsers/pancakeswap-v4.js';
-import { V3_SWAP_TOPIC } from '../parsers/pancakeswap-v3.js';
-import { isPancakeSwapV2Swap } from '../parsers/pancakeswap-v2.js';
-import { isPancakeSwapV3Swap } from '../parsers/pancakeswap-v3.js';
+import { V3_SWAP_TOPIC, isV3Swap } from '../parsers/v3-style.js';
+import { isV2Swap } from '../parsers/v2-style.js';
 import { isPancakeSwapV4Swap } from '../parsers/pancakeswap-v4.js';
 import type { RawEvent } from '../types/index.js';
 import { extractEvents } from '../extractors/events.js';
@@ -76,8 +75,8 @@ export async function inspectTransaction(txHash: `0x${string}`): Promise<void> {
   for (const event of events) {
     const topic0 = event.topics[0] ?? '(none)';
     const label  = labelTopic(topic0);
-    const isV2   = isPancakeSwapV2Swap(event);
-    const isV3   = isPancakeSwapV3Swap(event);
+    const isV2   = isV2Swap(event);
+    const isV3   = isV3Swap(event);
     const isV4   = isPancakeSwapV4Swap(event);
 
     const contractLabel = KNOWN_CONTRACTS[event.contractAddress.toLowerCase()] ?? '';

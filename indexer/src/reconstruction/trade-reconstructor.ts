@@ -47,6 +47,7 @@ function makeNormalized(
   return {
     txHash:           raw.txHash,
     blockNumber:      raw.blockNumber,
+    logIndex:         raw.logIndex,
     blockTimestampMs: raw.blockTimestampMs,
     wallet:           raw.wallet,
     pairAddress:      raw.contractAddress,

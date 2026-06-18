@@ -1,4 +1,8 @@
 import type { RawEvent, RawSwap, ParseContext } from '../types/index.js';
+import { pancakeswapV2Parser } from './pancakeswap-v2.js';
+import { pancakeswapV3Parser } from './pancakeswap-v3.js';
+import { pancakeswapV4Parser } from './pancakeswap-v4.js';
+import { thenaV2Parser, thenaV3Parser } from './thena.js';
 
 /**
  * Protocol-specific event parser.
@@ -26,3 +30,15 @@ export interface EventParser {
    */
   parse(event: RawEvent, context: ParseContext): Promise<RawSwap | null>;
 }
+
+/**
+ * Central registry array of all protocol parsers.
+ * Future additions are pushed to this array without touching the processor.
+ */
+export const DEX_PARSERS: readonly EventParser[] = [
+  pancakeswapV2Parser,
+  pancakeswapV3Parser,
+  pancakeswapV4Parser,
+  thenaV2Parser,
+  thenaV3Parser,
+] as const;

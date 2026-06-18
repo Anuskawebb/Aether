@@ -42,6 +42,18 @@
     "./services/token-metadata": {
       "types": "./dist/services/token-metadata.d.ts",
       "import": "./dist/services/token-metadata.js"
+    },
+    "./schema/wallet-positions": {
+      "types": "./dist/schema/wallet-positions.d.ts",
+      "import": "./dist/schema/wallet-positions.js"
+    },
+    "./repositories/position-repository": {
+      "types": "./dist/repositories/position-repository.d.ts",
+      "import": "./dist/repositories/position-repository.js"
+    },
+    "./services/position-builder": {
+      "types": "./dist/services/position-builder.d.ts",
+      "import": "./dist/services/position-builder.js"
     }
   },
   "scripts": {

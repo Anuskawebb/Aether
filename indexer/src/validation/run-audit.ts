@@ -3,19 +3,17 @@ import { env } from '../config/env.js';
 import { logger } from '../logger.js';
 import { BlockProcessor } from '../processor.js';
 import { ParserRegistry } from '../parsers/registry.js';
-import { pancakeswapV2Parser } from '../parsers/pancakeswap-v2.js';
-import { pancakeswapV3Parser } from '../parsers/pancakeswap-v3.js';
-import { pancakeswapV4Parser } from '../parsers/pancakeswap-v4.js';
+import { DEX_PARSERS } from '../parsers/index.js';
 import { getLatestBlock } from '../chains/bsc.js';
 import type { IndexedBlock, NormalizedTrade } from '../types/index.js';
 
 const EXPORT_FILE = './trades_export.json';
 
-// Simple parser registry including V2, V3, and V4
-const registry = new ParserRegistry()
-  .register(pancakeswapV2Parser)
-  .register(pancakeswapV3Parser)
-  .register(pancakeswapV4Parser);
+// Simple parser registry including all registered DEX parsers
+const registry = new ParserRegistry();
+for (const parser of DEX_PARSERS) {
+  registry.register(parser);
+}
 
 async function runAudit() {
   logger.info('Starting Indexer Validation and Audit Suite');

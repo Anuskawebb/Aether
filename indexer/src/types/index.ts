@@ -57,7 +57,7 @@ export interface DecodedV2Swap {
 
 // ── Normalized trade ──────────────────────────────────────────────────────────
 
-export type Dex = 'pancakeswap-v2' | 'pancakeswap-v3' | 'pancakeswap-v4';
+export type Dex = 'pancakeswap-v2' | 'pancakeswap-v3' | 'pancakeswap-v4' | 'thena';
 
 /**
  * Canonical trade format for the entire platform.
@@ -66,6 +66,8 @@ export type Dex = 'pancakeswap-v2' | 'pancakeswap-v3' | 'pancakeswap-v4';
 export interface NormalizedTrade {
   txHash: `0x${string}`;
   blockNumber: bigint;
+  /** Position of the Swap event log within the transaction receipt. Used for FIFO ordering within a block. */
+  logIndex: number;
   /** Unix epoch milliseconds of the containing block. */
   blockTimestampMs: number;
   /** EOA that sent the swap transaction. */
@@ -98,6 +100,7 @@ export interface NormalizedTrade {
 export interface RawSwap {
   txHash:           `0x${string}`;
   blockNumber:      bigint;
+  logIndex:         number;       // Swap event position in receipt
   blockTimestampMs: number;
   wallet:           `0x${string}`;
   contractAddress:  `0x${string}`; // pair for V2/V3, PoolManager for V4
