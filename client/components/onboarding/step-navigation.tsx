@@ -42,9 +42,10 @@ export default function StepNavigation({
       <button
         onClick={onForward}
         disabled={!canGoForward || forwardButtonDisabled || loading}
+        style={canGoForward && !forwardButtonDisabled && !loading ? { backgroundColor: 'var(--orange-accent)' } : undefined}
         className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${
           canGoForward && !forwardButtonDisabled && !loading
-            ? 'bg-orange-accent text-white hover:bg-orange-accent/90 shadow-sm'
+            ? 'text-white hover:opacity-90 shadow-sm'
             : 'bg-secondary text-muted-foreground/50 cursor-not-allowed'
         }`}
       >

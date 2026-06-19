@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   return (
     <OnboardingProvider>
-      <div className="min-h-screen bg-background flex flex-col">
+      <div className="dark min-h-screen bg-background flex flex-col">
         <header className="border-b border-border px-6 h-14 flex items-center gap-3">
           <div className="w-6 h-6 bg-orange-accent rounded flex items-center justify-center">
             <span className="text-white text-[10px] font-black">T</span>

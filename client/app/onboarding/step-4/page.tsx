@@ -51,28 +51,43 @@ export default function Step4Page() {
 
   if (done) {
     return (
-      <div className="text-center py-4">
-        <div className="w-16 h-16 rounded-full bg-green-positive/10 flex items-center justify-center mx-auto mb-6">
-          <CheckCircle2 size={32} className="text-green-positive" />
-        </div>
-        <h2 className="text-2xl font-bold text-foreground mb-2">Agent Created</h2>
-        <p className="text-muted-foreground text-sm mb-8">
-          <span className="font-semibold text-foreground">{state.agentName}</span> is ready.
-          Fund your wallet in the Execution Center to activate trading.
-        </p>
-
-        <div className="bg-card border border-border rounded-xl p-5 text-left mb-8 space-y-3">
-          <SummaryRow label="Agent Name" value={state.agentName} />
-          <SummaryRow label="Strategy" value={riskLabels[state.riskLevel ?? ''] ?? '—'} />
-          <SummaryRow label="Mode" value={modeLabels[state.tradingMode ?? ''] ?? '—'} />
-          {state.agentWalletAddress && (
-            <SummaryRow label="Wallet" value={`${state.agentWalletAddress.slice(0,10)}…`} mono />
-          )}
+      <div className="space-y-6">
+        {/* Success header */}
+        <div className="text-center py-6">
+          <div className="w-16 h-16 rounded-full bg-green-positive/10 border border-green-positive/20 flex items-center justify-center mx-auto mb-5">
+            <CheckCircle2 size={30} className="text-green-positive" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Agent Created</h2>
+          <p className="text-muted-foreground text-sm">
+            <span className="font-semibold text-foreground">{state.agentName}</span> is ready.
+            Fund your wallet to activate trading.
+          </p>
         </div>
 
+        {/* Summary */}
+        <div className="bg-card border border-border rounded-xl divide-y divide-border">
+          <SummaryRow label="Agent Name"   value={state.agentName} />
+          <SummaryRow label="Strategy"     value={riskLabels[state.riskLevel ?? ''] ?? '—'} />
+          <SummaryRow label="Mode"         value={modeLabels[state.tradingMode ?? ''] ?? '—'} />
+          {state.agentWalletAddress
+            ? <SummaryRow label="Wallet" value={`${state.agentWalletAddress.slice(0,10)}…`} mono />
+            : <SummaryRow label="Wallet" value="Pending (fund in Execution Center)" />
+          }
+        </div>
+
+        {/* Next step hint */}
+        <div className="flex gap-3 p-4 bg-orange-accent/5 border border-orange-accent/15 rounded-xl">
+          <Zap size={14} className="text-orange-accent mt-0.5 shrink-0" />
+          <p className="text-xs text-muted-foreground leading-relaxed">
+            Next: open the <span className="text-foreground font-medium">Execution Center</span> and send BNB to your agent wallet to start trading.
+          </p>
+        </div>
+
+        {/* CTA — use inline style to guarantee color even without dark wrapper */}
         <button
           onClick={handleGoToExecution}
-          className="w-full flex items-center justify-center gap-2 px-6 py-3.5 bg-orange-accent text-white rounded-xl font-semibold text-sm hover:bg-orange-accent/90 transition-all"
+          style={{ backgroundColor: 'var(--orange-accent)' }}
+          className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
         >
           <Zap size={15} />
           Go to Execution Center
@@ -137,7 +152,7 @@ export default function Step4Page() {
 
 function SummaryRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div className="flex items-center justify-between text-sm border-t border-border pt-3 first:border-0 first:pt-0">
+    <div className="flex items-center justify-between px-5 py-3.5 text-sm">
       <span className="text-muted-foreground">{label}</span>
       <span className={`font-medium text-foreground ${mono ? 'font-mono text-xs' : ''}`}>{value}</span>
     </div>
