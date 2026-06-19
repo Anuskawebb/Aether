@@ -378,3 +378,33 @@ export async function fetchWalletPortfolio(agentId: string): Promise<WalletPortf
     return empty
   }
 }
+
+export interface ReadinessData {
+  walletCreated:      boolean
+  walletFunded:       boolean
+  twakConnected:      boolean
+  readyForTrading:    boolean
+  currentBalanceBnb:  number
+  minimumRequiredBnb: number
+  status:             'PENDING' | 'AWAITING_FUNDS' | 'READY'
+}
+
+const emptyReadiness: ReadinessData = {
+  walletCreated:      false,
+  walletFunded:       false,
+  twakConnected:      false,
+  readyForTrading:    false,
+  currentBalanceBnb:  0,
+  minimumRequiredBnb: 0.005,
+  status:             'PENDING',
+}
+
+export async function fetchReadiness(agentId: string): Promise<ReadinessData> {
+  try {
+    const res = await fetch(`${base()}/api/agents/${agentId}/readiness`, { cache: 'no-store' })
+    if (!res.ok) return emptyReadiness
+    return await res.json()
+  } catch {
+    return emptyReadiness
+  }
+}

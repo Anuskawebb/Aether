@@ -1,24 +1,21 @@
 import TopNavigation from '@/components/navigation/top-nav'
-import { fetchExecutionCenter, fetchAgentWallet, fetchWalletBalance, fetchWalletPortfolio } from '@/lib/api'
-import { Check, Clock, AlertCircle, X, Activity, Copy, Wallet, TrendingUp } from 'lucide-react'
+import { fetchExecutionCenter } from '@/lib/api'
+import { Check, Clock, AlertCircle, X, Activity } from 'lucide-react'
+import WalletReadiness from '@/components/execution/wallet-readiness'
 
 export const dynamic = 'force-dynamic'
 
 const AGENT_ID = process.env.TORO_AGENT_ID ?? 'toro-agent-001'
 
 export default async function ExecutionCenterPage() {
-  const [{ stats, queue }, { account }, balance, portfolio] = await Promise.all([
-    fetchExecutionCenter(),
-    fetchAgentWallet(AGENT_ID),
-    fetchWalletBalance(AGENT_ID),
-    fetchWalletPortfolio(AGENT_ID),
-  ])
+  const { stats, queue } = await fetchExecutionCenter()
 
   return (
     <>
       <TopNavigation />
       <main className="min-h-screen bg-background">
         <div className="max-w-7xl mx-auto px-6 py-8">
+
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">Execution Center</h1>
@@ -29,11 +26,11 @@ export default async function ExecutionCenterPage() {
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-8">
             {[
               { label: 'Orders Processed', value: String(stats.ordersProcessed) },
-              { label: 'Filled Orders', value: String(stats.ordersFilled) },
-              { label: 'Failed Orders', value: String(stats.ordersFailed) },
-              { label: 'Success Rate', value: `${stats.successRate}%` },
-              { label: 'Avg Time', value: '2.3s' },
-              { label: 'Open Positions', value: String(stats.openPositions) },
+              { label: 'Filled Orders',    value: String(stats.ordersFilled) },
+              { label: 'Failed Orders',    value: String(stats.ordersFailed) },
+              { label: 'Success Rate',     value: `${stats.successRate}%` },
+              { label: 'Avg Time',         value: '2.3s' },
+              { label: 'Open Positions',   value: String(stats.openPositions) },
             ].map((metric) => (
               <div key={metric.label} className="bg-card border border-border rounded-lg p-3">
                 <div className="text-xs text-muted-foreground mb-1">{metric.label}</div>
@@ -41,6 +38,9 @@ export default async function ExecutionCenterPage() {
               </div>
             ))}
           </div>
+
+          {/* Wallet Readiness — live-updating client component */}
+          <WalletReadiness agentId={AGENT_ID} />
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
             {/* Execution Queue */}
@@ -70,25 +70,23 @@ export default async function ExecutionCenterPage() {
                       <div key={order.id} className="border border-border rounded-lg p-4 flex items-center justify-between">
                         <div className="flex items-center gap-4 flex-1">
                           <div className="font-bold text-foreground w-16">{order.token}</div>
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              order.action === 'BUY' ? 'bg-green-positive/10 text-green-positive' : 'bg-red-negative/10 text-red-negative'
-                            }`}>
-                              {order.action}
-                            </span>
-                          </div>
+                          <span className={`px-2 py-1 rounded text-xs font-medium ${
+                            order.action === 'BUY'
+                              ? 'bg-green-positive/10 text-green-positive'
+                              : 'bg-red-negative/10 text-red-negative'
+                          }`}>
+                            {order.action}
+                          </span>
                           <div className="text-sm text-muted-foreground">
                             ${order.amountUsd?.toFixed(2) ?? '—'}
                           </div>
                         </div>
                         <div className="flex items-center gap-6">
-                          <div className="w-24">
-                            <div className="flex items-center justify-center">
-                              {order.status === 'FILLED' && <Check size={18} className="text-green-positive" />}
-                              {order.status === 'PROCESSING' && <Activity size={18} className="text-orange-accent animate-pulse" />}
-                              {order.status === 'PENDING' && <Clock size={18} className="text-muted-foreground" />}
-                              {order.status === 'FAILED' && <X size={18} className="text-red-negative" />}
-                            </div>
+                          <div className="w-24 flex items-center justify-center">
+                            {order.status === 'FILLED'     && <Check    size={18} className="text-green-positive" />}
+                            {order.status === 'PROCESSING' && <Activity  size={18} className="text-orange-accent animate-pulse" />}
+                            {order.status === 'PENDING'    && <Clock     size={18} className="text-muted-foreground" />}
+                            {order.status === 'FAILED'     && <X        size={18} className="text-red-negative" />}
                           </div>
                           <div className="text-xs text-muted-foreground w-28 text-right">
                             {new Date(order.createdAt).toLocaleTimeString()}
@@ -108,11 +106,11 @@ export default async function ExecutionCenterPage() {
                 <div className="space-y-3">
                   {[
                     { service: 'Execution Engine', status: 'healthy' },
-                    { service: 'Risk Engine', status: 'healthy' },
-                    { service: 'Portfolio Engine', status: 'healthy' },
-                    { service: 'TWAK Adapter', status: 'healthy' },
-                    { service: 'CMC Agent Hub', status: 'healthy' },
-                    { service: 'BNB Agent SDK', status: 'degraded' },
+                    { service: 'Risk Engine',       status: 'healthy' },
+                    { service: 'Portfolio Engine',  status: 'healthy' },
+                    { service: 'TWAK Adapter',      status: 'healthy' },
+                    { service: 'CMC Agent Hub',     status: 'healthy' },
+                    { service: 'BNB Agent SDK',     status: 'degraded' },
                   ].map((sys) => (
                     <div key={sys.service} className="flex items-center justify-between">
                       <span className="text-sm text-muted-foreground">{sys.service}</span>
@@ -133,8 +131,8 @@ export default async function ExecutionCenterPage() {
                 <div className="space-y-2 text-sm">
                   {[
                     { alert: `Drawdown: -${stats.drawdownPct.toFixed(1)}%`, severity: stats.drawdownPct > 5 ? 'warning' : 'info' },
-                    { alert: `Exposure: ${stats.openRiskPct.toFixed(1)}%`, severity: 'info' },
-                    { alert: `Open positions: ${stats.openPositions}`, severity: 'info' },
+                    { alert: `Exposure: ${stats.openRiskPct.toFixed(1)}%`,  severity: 'info' },
+                    { alert: `Positions: ${stats.openPositions}`,            severity: 'info' },
                   ].map((item, idx) => (
                     <div key={idx} className={`p-2 rounded border ${
                       item.severity === 'warning'
@@ -145,131 +143,6 @@ export default async function ExecutionCenterPage() {
                     </div>
                   ))}
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Agent Wallet Section */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-
-            {/* Wallet Card */}
-            <div className="bg-card border border-border rounded-lg p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Wallet size={18} className="text-orange-accent" />
-                <h3 className="font-bold text-foreground">Agent Wallet</h3>
-              </div>
-              {account ? (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Status</span>
-                    <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                      account.status === 'ACTIVE'
-                        ? 'bg-green-positive/10 text-green-positive'
-                        : 'bg-orange-accent/10 text-orange-accent'
-                    }`}>
-                      {account.status}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-muted-foreground">Type</span>
-                    <span className="text-xs text-foreground font-mono">{account.accountType}</span>
-                  </div>
-                  <div>
-                    <div className="text-xs text-muted-foreground mb-1">Wallet Address</div>
-                    <div className="flex items-center gap-2 bg-secondary rounded p-2">
-                      <span className="text-xs font-mono text-foreground truncate flex-1">
-                        {account.walletAddress}
-                      </span>
-                      <button
-                        onClick={undefined}
-                        className="shrink-0 text-muted-foreground hover:text-foreground transition-colors"
-                        title="Copy address"
-                      >
-                        <Copy size={14} />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-muted-foreground">
-                  No wallet configured.
-                  <br />
-                  <span className="text-xs">Ensure TWAK sidecar is running.</span>
-                </div>
-              )}
-            </div>
-
-            {/* Balance Card */}
-            <div className="bg-card border border-border rounded-lg p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <TrendingUp size={18} className="text-orange-accent" />
-                <h3 className="font-bold text-foreground">Balance</h3>
-              </div>
-              {balance.funded ? (
-                <div className="space-y-3">
-                  <div>
-                    <div className="text-2xl font-bold text-foreground">
-                      {parseFloat(balance.nativeBalance).toFixed(4)} {balance.nativeSymbol}
-                    </div>
-                    {balance.usdValue && (
-                      <div className="text-sm text-muted-foreground mt-1">
-                        ≈ ${parseFloat(balance.usdValue).toLocaleString()} USD
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-4 p-2 bg-green-positive/10 border border-green-positive/20 rounded">
-                    <Check size={14} className="text-green-positive" />
-                    <span className="text-xs text-green-positive font-medium">Ready For Trading</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="text-2xl font-bold text-foreground">0 BNB</div>
-                  <div className="p-3 bg-orange-accent/10 border border-orange-accent/20 rounded">
-                    <div className="text-xs font-medium text-orange-accent mb-2">Fund Wallet to Start Trading</div>
-                    {account && (
-                      <div className="flex items-center gap-2 bg-background/50 rounded p-2 mt-2">
-                        <span className="text-xs font-mono text-muted-foreground truncate flex-1">
-                          {account.walletAddress}
-                        </span>
-                        <Copy size={12} className="shrink-0 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div className="text-xs text-muted-foreground mt-2">
-                      Send BNB to the address above to enable trading.
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Portfolio Card */}
-            <div className="bg-card border border-border rounded-lg p-6">
-              <div className="flex items-center gap-2 mb-4">
-                <Activity size={18} className="text-orange-accent" />
-                <h3 className="font-bold text-foreground">Portfolio</h3>
-              </div>
-              <div className="space-y-3">
-                <div>
-                  <div className="text-xs text-muted-foreground mb-1">Total Value</div>
-                  <div className="text-2xl font-bold text-foreground">
-                    ${parseFloat(portfolio.totalValueUsd || '0').toLocaleString()}
-                  </div>
-                </div>
-                {portfolio.assets.length > 0 ? (
-                  <div className="space-y-2 mt-2">
-                    {portfolio.assets.slice(0, 4).map((asset: any, i: number) => (
-                      <div key={i} className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">{asset.symbol ?? asset.chain ?? '—'}</span>
-                        <span className="text-foreground font-mono text-xs">
-                          {parseFloat(asset.balance ?? asset.amount ?? '0').toFixed(4)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-xs text-muted-foreground mt-2">No token holdings</div>
-                )}
               </div>
             </div>
           </div>
@@ -294,6 +167,9 @@ export default async function ExecutionCenterPage() {
                   </div>
                 </div>
               ))}
+              {queue.length === 0 && (
+                <div className="text-muted-foreground text-sm">No timeline events</div>
+              )}
             </div>
           </div>
 
@@ -312,6 +188,7 @@ export default async function ExecutionCenterPage() {
               {queue.length === 0 && <div>No execution logs available</div>}
             </div>
           </div>
+
         </div>
       </main>
     </>
