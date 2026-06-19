@@ -11,7 +11,9 @@
   "dependencies": {
     "@paper-design/shaders-react": "^0.0.76",
     "@tailwindcss/postcss": "^4.3.0",
+    "@toro/db": "file:../packages/db",
     "clsx": "^2.1.1",
+    "drizzle-orm": "^0.45.2",
     "framer-motion": "^12.40.0",
     "next": "16.2.9",
     "ogl": "^1.0.11",
