@@ -1,4 +1,4 @@
-import { type TokenSignalBundle } from '@aether/db';
+import { type TokenSignalBundle } from '@toro/db';
 import { PriceState, type PriceBundle } from '../valuation/price-types.js';
 import { type RiskDecision } from '../risk/risk-engine.js';
 import { type RankedOpportunity } from './trade-recommendation-types.js';

@@ -1,4 +1,4 @@
-import { type TokenSignalBundle } from '@aether/db';
+import { type TokenSignalBundle } from '@toro/db';
 
 export type RiskTier = 'LOW' | 'MEDIUM' | 'HIGH' | 'SPECULATIVE';
 

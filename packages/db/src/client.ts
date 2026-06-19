@@ -34,6 +34,8 @@ import * as portfolioSnapshotsSchema from './schema/portfolio-snapshots.js';
 import * as portfolioStateSchema from './schema/portfolio-state.js';
 import * as tradeRecommendationsSchema from './schema/trade-recommendations.js';
 import * as agentPositionsSchema from './schema/agent-positions.js';
+import * as executionOrdersSchema from './schema/execution-orders.js';
+import * as executionTransactionsSchema from './schema/execution-transactions.js';
 
 const schema = {
   ...tradesSchema,
@@ -52,6 +54,8 @@ const schema = {
   ...portfolioStateSchema,
   ...tradeRecommendationsSchema,
   ...agentPositionsSchema,
+  ...executionOrdersSchema,
+  ...executionTransactionsSchema,
 };
 
 const databaseUrl = process.env.DATABASE_URL;
@@ -108,5 +112,9 @@ export * from './schema/portfolio-state.js';
 export * from './schema/trade-recommendations.js';
 export * from './schema/agent-positions.js';
 export * from './repositories/trade-recommendations-repository.js';
+export * from './schema/execution-orders.js';
+export * from './schema/execution-transactions.js';
+export * from './repositories/execution-orders-repository.js';
+export * from './repositories/execution-transactions-repository.js';
 export { queryClient };
 export { eq, and, or, inArray, asc, desc, gte, lte, lt, isNotNull, sql, gt, notInArray } from 'drizzle-orm';

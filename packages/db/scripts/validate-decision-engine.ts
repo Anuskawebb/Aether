@@ -143,7 +143,7 @@ async function cleanup() {
 // ── Main ───────────────────────────────────────────────────────────────────
 
 async function main() {
-  console.log('Aether Phase 7 — Decision Engine Validation (post-audit)');
+  console.log('Toro Phase 7 — Decision Engine Validation (post-audit)');
   console.log('='.repeat(64));
 
   await cleanup();

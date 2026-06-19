@@ -1,4 +1,4 @@
-import { db, tokenPrices, eq } from '@aether/db';
+import { db, tokenPrices, eq } from '@toro/db';
 import { PriceState, computeConfidenceBreakdown, type RouteType, type PriceBundle } from './price-types.js';
 
 export class PriceService {
