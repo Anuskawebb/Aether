@@ -15,7 +15,7 @@ import {
   IndexerStateRepository,
   PositionRepository,
   WalletMetricsRepository,
-} from '@aether/db';
+} from '@toro/db';
 
 // ── Process lifecycle ─────────────────────────────────────────────────────────
 

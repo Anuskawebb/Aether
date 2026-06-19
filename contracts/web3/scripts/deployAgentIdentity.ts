@@ -3,7 +3,7 @@ import { ethers } from 'hardhat';
 // ─────────────────────────────────────────────────────────────────────────────
 //  Phase 3 — ERC-8004 agent identity (Mantle Sepolia).
 //
-//  Deploys the AgentIdentityRegistry and registers the Aether copy-trading agent
+//  Deploys the AgentIdentityRegistry and registers the Toro copy-trading agent
 //  as an on-chain ERC-8004 "Trustless Agent": mints an identity NFT (agentId)
 //  with an agentURI (registration file, embedded as a data: URI) + metadata
 //  linking it to the live VaultManager. Self-verifies the registration.
@@ -36,7 +36,7 @@ async function main() {
 
   // ── 2. Build the ERC-8004 agent registration file (agent card) ─────────────
   const agentCard = {
-    name: 'Aether Copy-Trading Agent',
+    name: 'Toro Copy-Trading Agent',
     description:
       'Autonomous AI agent that mirrors top traders on Mantle via non-custodial ' +
       'on-chain vaults, with AI trade scoring, real DEX execution and stop-loss risk control.',
@@ -51,7 +51,7 @@ async function main() {
     'data:application/json;base64,' + Buffer.from(JSON.stringify(agentCard)).toString('base64');
 
   // ── 3. Register the agent (mint identity NFT) with metadata ────────────────
-  console.log('\n2) Registering the Aether agent...');
+  console.log('\n2) Registering the Toro agent...');
   const metadata = [
     { key: 'type',         value: ethers.hexlify(ethers.toUtf8Bytes('copy-trading')) },
     { key: 'chain',        value: ethers.hexlify(ethers.toUtf8Bytes('mantle-sepolia')) },
@@ -86,7 +86,7 @@ async function main() {
   const total = await registry.totalAgents();
   ok(`registry totalAgents = ${total}`);
 
-  console.log('\n🎉 PHASE 3 PASSED — Aether is now an on-chain ERC-8004 Trustless Agent on Mantle.');
+  console.log('\n🎉 PHASE 3 PASSED — Toro is now an on-chain ERC-8004 Trustless Agent on Mantle.');
   console.log('   AgentIdentityRegistry:', registryAddr);
   console.log('   agentId:              ', agentId.toString());
   console.log('\n   Add to contracts/web3/.env:  AGENT_REGISTRY_ADDRESS=' + registryAddr);

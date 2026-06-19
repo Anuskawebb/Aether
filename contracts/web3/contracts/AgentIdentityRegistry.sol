@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 //    setMetadata / getMetadata
 //    events Registered, MetadataSet
 //
-//  This is the Mantle Sepolia deployment for the Aether copy-trading agent
+//  This is the Mantle Sepolia deployment for the Toro copy-trading agent
 //  (Mantle Turing Test hackathon, Phase I: ERC-8004 identity on testnet).
 //  If the hackathon provides a canonical registry, point to that address instead.
 // ─────────────────────────────────────────────────────────────────────────────
