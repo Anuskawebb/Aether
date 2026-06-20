@@ -1,5 +1,5 @@
 {
-  "name": "aether-contracts",
+  "name": "toro-contracts",
   "version": "1.0.0",
   "description": "Smart contracts for Mantle Sepolia Testnet",
   "main": "index.js",

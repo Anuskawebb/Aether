@@ -1,5 +1,5 @@
 {
-  "name": "@aether/agent-core",
+  "name": "@toro/agent-core",
   "version": "0.1.0",
   "type": "module",
   "exports": {
@@ -12,8 +12,10 @@
     "build": "tsc"
   },
   "dependencies": {
-    "@aether/db": "file:../db",
-    "drizzle-orm": "^0.31.2"
+    "@toro/db": "file:../db",
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.31.2",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

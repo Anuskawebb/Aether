@@ -1,6 +1,6 @@
-# Aether — AI-Powered Copy-Trading Protocol on Mantle
+# Toro — AI-Powered Copy-Trading Protocol on Mantle
 
-Aether is an agent-first copy-trading protocol built natively on Mantle. It empowers users to deploy autonomous, AI-driven copy-trading agents that monitor leader activity on Mantle Mainnet (Agni Finance pools) and execute mirrored trades on Mantle Sepolia Testnet. By combining high-speed execution, non-custodial smart contract vaults, and AI-powered trade scoring, Aether makes institutional-grade automated trading accessible to everyone.
+Toro is an agent-first copy-trading protocol built natively on Mantle. It empowers users to deploy autonomous, AI-driven copy-trading agents that monitor leader activity on Mantle Mainnet (Agni Finance pools) and execute mirrored trades on Mantle Sepolia Testnet. By combining high-speed execution, non-custodial smart contract vaults, and AI-powered trade scoring, Toro makes institutional-grade automated trading accessible to everyone.
 
 ## Architecture
 
@@ -30,12 +30,12 @@ Mantle Mainnet (Agni) ──swap events──► Watcher Service ──score─�
 
 ## Local Development Setup
 
-To run Aether locally, configure the environment variables and boot up the frontend and watcher services.
+To run Toro locally, configure the environment variables and boot up the frontend and watcher services.
 
 ### 1. Environment Variables Configuration
 
-#### Frontend (`frontend/.env.local`)
-Create a `frontend/.env.local` file with the following variables:
+#### Frontend (`landing/.env.local`)
+Create a `landing/.env.local` file with the following variables:
 ```env
 # WalletConnect
 NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=YOUR_PROJECT_ID_HERE
@@ -95,7 +95,7 @@ Install dependencies and start development servers:
 
 #### Start Frontend
 ```bash
-cd frontend
+cd landing
 npm install
 npm run dev
 ```

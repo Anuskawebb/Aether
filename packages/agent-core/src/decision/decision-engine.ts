@@ -5,7 +5,7 @@ import {
   SmartMoneySignalsRepository,
   TradeRecommendationsRepository,
   type TokenSignalBundle,
-} from '@aether/db';
+} from '@toro/db';
 import { PriceService } from '../valuation/price-service.js';
 import { PriceState } from '../valuation/price-types.js';
 import { RiskEngine, type RiskInput } from '../risk/risk-engine.js';

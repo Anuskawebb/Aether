@@ -1,4 +1,4 @@
-import { db, priceObservations, tokenPrices, eq } from '@aether/db';
+import { db, priceObservations, tokenPrices, eq } from '@toro/db';
 
 export const BSC_STABLES = new Set([
   '0x55d398326f99059ff775485246999027b3197955', // USDT

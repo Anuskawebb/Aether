@@ -1,4 +1,4 @@
-import { type TokenSignalBundle } from '@aether/db';
+import { type TokenSignalBundle } from '@toro/db';
 import { type RiskTier } from '../risk/risk-engine.js';
 import { type PriceBundle } from '../valuation/price-types.js';
 

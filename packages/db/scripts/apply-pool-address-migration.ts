@@ -1,4 +1,4 @@
-// Apply source_pool_address migration using the standard @aether/db client
+// Apply source_pool_address migration using the standard @toro/db client
 // which loads the correct DATABASE_URL via the multi-path dotenv chain.
 import { db } from '../src/client.js';
 import { sql } from 'drizzle-orm';

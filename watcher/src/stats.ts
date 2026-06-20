@@ -18,6 +18,6 @@ export async function incrStat(key: string): Promise<void> {
   } catch { /* non-fatal */ }
 }
 
-export const STAT_AI_CALLS   = 'aether:stats:aiCalls:today';
-export const STAT_EXECUTIONS = 'aether:stats:executions:today';
-export const STAT_EVALUATED  = 'aether:stats:evaluated:today';
+export const STAT_AI_CALLS   = 'toro:stats:aiCalls:today';
+export const STAT_EXECUTIONS = 'toro:stats:executions:today';
+export const STAT_EVALUATED  = 'toro:stats:evaluated:today';

@@ -1,5 +1,8 @@
-import { db, tokenPrices, eq } from '@aether/db';
+import { db, tokenPrices, eq } from '@toro/db';
 import { PriceState, computeConfidenceBreakdown, type RouteType, type PriceBundle } from './price-types.js';
+
+// WBNB on BSC — the price DB tracks this as the BNB price proxy
+const WBNB_BSC = '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c';
 
 export class PriceService {
   private static cache = new Map<string, { bundle: PriceBundle; fetchedAt: number }>();
@@ -17,6 +20,14 @@ export class PriceService {
    */
   public static clearCache(): void {
     this.cache.clear();
+  }
+
+  /**
+   * Returns the BNB price in USD by looking up WBNB in the price DB.
+   * Returns 0 if not yet tracked (watcher must have observed WBNB pairs first).
+   */
+  public static async getBnbPrice(): Promise<number> {
+    return this.getPrice(WBNB_BSC);
   }
 
   /**
