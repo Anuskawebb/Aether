@@ -1,4 +1,4 @@
-import { db, priceObservations, tokenPrices, and, inArray, gte, lt, sql } from '@aether/db';
+import { db, priceObservations, tokenPrices, and, inArray, gte, lt, sql } from '@toro/db';
 import { PriceState, computeConfidenceBreakdown, type RouteType } from './price-types.js';
 import { BSC_STABLES, WBNB_ADDRESS } from './price-observation-service.js';
 

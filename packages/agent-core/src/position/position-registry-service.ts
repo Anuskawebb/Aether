@@ -1,4 +1,4 @@
-import { db, agentPositions, eq, and } from '@aether/db';
+import { db, agentPositions, eq, and } from '@toro/db';
 import { randomUUID } from 'crypto';
 import {
   type AgentPosition,

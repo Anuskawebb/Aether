@@ -1,5 +1,5 @@
 {
-  "name": "@aether/db",
+  "name": "@toro/db",
   "version": "0.1.0",
   "type": "module",
   "exports": {

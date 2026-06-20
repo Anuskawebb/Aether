@@ -1,5 +1,5 @@
 {
-  "name": "@aether/indexer",
+  "name": "@toro/indexer",
   "version": "0.1.0",
   "description": "BSC blockchain indexer — block fetching, checkpoint management, and swap parsing foundation",
   "type": "module",
@@ -14,7 +14,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@aether/db": "file:../packages/db",
+    "@toro/db": "file:../packages/db",
     "dotenv": "^16.4.5",
     "viem": "^2.21.0"
   },

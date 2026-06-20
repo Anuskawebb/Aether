@@ -1,0 +1,1 @@
+{"version":3,"file":"twak-config.js","sourceRoot":"","sources":["../../../src/execution/twak/twak-config.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,CAAC,EAAE,MAAM,KAAK,CAAC;AAExB,MAAM,CAAC,MAAM,gBAAgB,GAAG,CAAC,CAAC,MAAM,CAAC;IACvC,MAAM,EAAE,CAAC,CAAC,MAAM,EAAE,CAAC,OAAO,CAAC,uBAAuB,CAAC;IACnD,QAAQ,EAAE,CAAC,CAAC,MAAM,EAAE,CAAC,QAAQ,EAAE;CAChC,CAAC,CAAC"}

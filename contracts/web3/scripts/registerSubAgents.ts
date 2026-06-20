@@ -63,7 +63,7 @@ async function main() {
     process.exit(1);
   }
   const [me] = await ethers.getSigners();
-  console.log('Registering Aether sub-agents on AgentIdentityRegistry:', REGISTRY_ADDRESS);
+  console.log('Registering Toro sub-agents on AgentIdentityRegistry:', REGISTRY_ADDRESS);
   console.log('  signer:', me.address, '\n');
 
   const registry = await ethers.getContractAt('AgentIdentityRegistry', REGISTRY_ADDRESS);
@@ -80,10 +80,10 @@ async function main() {
   }
 
   // ── 2. Register the Copy-Score Agent ────────────────────────────────────────
-  console.log('\n2) Registering Aether Copy-Score Agent...');
+  console.log('\n2) Registering Toro Copy-Score Agent...');
   const scoreAgentId = await registerAgent(
     registry,
-    'Aether Copy-Score Agent',
+    'Toro Copy-Score Agent',
     'OpenAI-backed agent that scores each leader trade 0-100 for copy-trade ' +
       'conviction, weighing signal strength, freshness and vault risk tolerance. ' +
       'Falls back to a deterministic rules engine if the LLM is unavailable.',
@@ -92,10 +92,10 @@ async function main() {
   );
 
   // ── 3. Register the Risk-Management Agent ───────────────────────────────────
-  console.log('\n3) Registering Aether Risk-Management Agent...');
+  console.log('\n3) Registering Toro Risk-Management Agent...');
   const riskAgentId = await registerAgent(
     registry,
-    'Aether Risk-Management Agent',
+    'Toro Risk-Management Agent',
     'OpenAI-backed agent that reviews open copy-trade positions approaching ' +
       'their stop-loss threshold and can trigger an early close based on drawdown, ' +
       'vault risk tolerance and holding time. The hard stop-loss floor remains ' +

@@ -1,4 +1,4 @@
-import { type WalletPosition } from '@aether/db';
+import { type WalletPosition } from '@toro/db';
 import { PriceState, type PriceBundle } from '../valuation/price-types.js';
 import { type PortfolioValuation, type PositionValuation } from './portfolio-types.js';
 

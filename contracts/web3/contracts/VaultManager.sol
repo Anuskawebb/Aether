@@ -8,7 +8,7 @@ pragma solidity ^0.8.20;
 //  ╚██╗ ██╔╝██╔══██║██║   ██║██║     ██║
 //   ╚████╔╝ ██║  ██║╚██████╔╝███████╗██║
 //
-//  VaultManager — Aether copy-trading core contract
+//  VaultManager — Toro copy-trading core contract
 //  Chain: Mantle Sepolia Testnet (5003)
 //
 //  ── MANTLE-NATIVE PIPELINE (no Somnia Agent Platform) ──────────────────────
@@ -66,8 +66,8 @@ interface IFusionXRouter {
 
 /**
  * @title  VaultManager
- * @author Aether Team
- * @notice Core contract for Aether copy-trading.
+ * @author Toro Team
+ * @notice Core contract for Toro copy-trading.
  *
  * @dev    Each user creates one vault per leader they want to follow.
  *         aUSD is locked inside the vault. When the leader trades, the off-chain

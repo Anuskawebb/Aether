@@ -9,7 +9,7 @@ import {
   gte,
   lt,
   type WalletPosition,
-} from '@aether/db';
+} from '@toro/db';
 import { PriceService } from '../valuation/price-service.js';
 import { BSC_STABLES } from '../valuation/price-observation-service.js';
 import { type PriceBundle } from '../valuation/price-types.js';

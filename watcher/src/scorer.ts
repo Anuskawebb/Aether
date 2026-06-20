@@ -95,7 +95,7 @@ export function scoreTrade(i: ScoreInput): number {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const SCORE_SYSTEM_PROMPT =
-  'You are the copy-trade scoring agent for Aether, an on-chain copy-trading ' +
+  'You are the copy-trade scoring agent for Toro, an on-chain copy-trading ' +
   'platform on Mantle. Given a leader trade and a follower vault\'s state, ' +
   'output a copy-score from 0-100 representing how strongly the follower ' +
   'vault should mirror this trade (0 = skip entirely, 100 = full conviction). ' +

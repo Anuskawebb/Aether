@@ -29,7 +29,7 @@ export interface RiskResult {
 }
 
 const RISK_SYSTEM_PROMPT =
-  'You are the risk-management agent for Aether, an on-chain copy-trading ' +
+  'You are the risk-management agent for Toro, an on-chain copy-trading ' +
   'platform on Mantle. A follower vault holds an open position that is ' +
   'drawing down but has not yet hit its hard stop-loss threshold. Decide ' +
   'whether to close the position now ("close") or keep holding ("hold"). ' +

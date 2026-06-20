@@ -83,3 +83,29 @@ export {
   PositionRegistryService,
 } from './position/position-registry-service.js';
 
+// ── Phase 8A: Execution Infrastructure ───────────────────────────────────────
+
+export {
+  type ExecutionOrder,
+  type ExecutionResult,
+  type Executor,
+} from './execution/executor.js';
+
+export {
+  MockExecutor,
+} from './execution/mock-executor.js';
+
+export {
+  TwakExecutor,
+} from './execution/twak-executor.js';
+
+export {
+  createExecutor,
+} from './execution/executor-factory.js';
+
+export {
+  ExecutionEngine,
+  type ExecutionEngineConfig,
+  type ExecutionCycleResult,
+} from './execution/execution-engine.js';
+

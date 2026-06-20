@@ -5,7 +5,7 @@
     "moduleResolution": "Bundler",
     "baseUrl": ".",
     "paths": {
-      "@aether/db": ["../packages/db/dist/client.d.ts"]
+      "@toro/db": ["../packages/db/dist/client.d.ts"]
     },
     "lib": ["ES2022"],
     "outDir": "dist",
