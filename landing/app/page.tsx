@@ -276,7 +276,25 @@ function FeaturedSection() {
   );
 }
 
+// Loader eye — standalone animated version for the splash screen
+const LoaderEye = () => (
+  <svg viewBox="0 0 520 400" fill="none" xmlns="http://www.w3.org/2000/svg" className="loader-eye-svg">
+    <path
+      fill="currentColor"
+      fillRule="evenodd"
+      d="M 35 230 A 125 125 0 0 0 260 305 A 125 125 0 0 0 485 230 C 485 190 460 160 430 145 L 260 55 C 230 40 190 90 160 90 C 140 90 110 40 90 40 C 60 40 35 130 35 230 Z M 250 230 A 90 90 0 1 0 70 230 A 90 90 0 1 0 250 230 Z M 450 230 A 90 90 0 1 0 270 230 A 90 90 0 1 0 450 230 Z"
+    />
+    <g className="loader-pupil-l">
+      <circle cx="195" cy="265" r="32" fill="currentColor" />
+    </g>
+    <g className="loader-pupil-r">
+      <circle cx="395" cy="265" r="32" fill="currentColor" />
+    </g>
+  </svg>
+);
+
 export default function Home() {
+  const [loading, setLoading] = useState(true);
   const [active, setActive] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLAnchorElement>(null);
@@ -289,6 +307,12 @@ export default function Home() {
   const revealKickRef = useRef<HTMLParagraphElement>(null);
   const startRef = useRef({ cx: 0, cy: 0, size: 56 });
   const mouseRef = useRef({ x: -9999, y: -9999 });
+
+  // Loader timer — eye animates for 2.5s, then fades out
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 2500);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     // easeInOutCubic
@@ -494,6 +518,16 @@ export default function Home() {
 
   return (
     <>
+      {/* ── Loader splash screen ──────────────────────────────────────── */}
+      <div className={`loader-screen${loading ? "" : " loader-done"}`}>
+        <div className="loader-logo">
+          <LoaderEye />
+        </div>
+      </div>
+
+      {/* ── Main content (fades in after loader) ──────────────────────── */}
+      <div className={`page-content${loading ? " page-hidden" : " page-visible"}`}>
+
       {/* Eye logo — rests in the masthead logo slot, flies to the centre on
           scroll and rides along while its pupils roll (the eye-scroll effect). */}
       <a href={APP_URL} className="eye-logo" ref={logoRef} aria-label="TORU home">
@@ -609,6 +643,8 @@ export default function Home() {
 
       {/* ── Cinematic Footer ──────────────────────────────────────────── */}
       <CinematicFooter />
+
+      </div>{/* end .page-content */}
     </>
   );
 }

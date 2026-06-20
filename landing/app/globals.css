@@ -43,6 +43,72 @@
   --border: rgba(239, 236, 227, 0.12);
 }
 
+/* ── Loader ──────────────────────────────────────────────────────────── */
+.loader-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-content: center;
+  background-color: var(--paper);
+  transition: opacity 0.8s ease, visibility 0.8s ease;
+}
+.loader-screen.loader-done {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.loader-logo {
+  width: clamp(80px, 15vw, 140px);
+  color: var(--green);
+}
+
+.loader-eye-svg {
+  width: 100%;
+  height: auto;
+}
+
+/* Pupils look around */
+.loader-pupil-l,
+.loader-pupil-r {
+  transform-origin: 160px 230px;
+  animation: loader-look 2s ease-in-out infinite;
+}
+.loader-pupil-r {
+  transform-origin: 360px 230px;
+  animation-delay: 0.15s;
+}
+
+@keyframes loader-look {
+  0%   { transform: rotate(0deg); }
+  20%  { transform: rotate(25deg); }
+  40%  { transform: rotate(-20deg); }
+  60%  { transform: rotate(15deg); }
+  80%  { transform: rotate(-10deg); }
+  100% { transform: rotate(0deg); }
+}
+
+/* Subtle scale pulse on the whole logo */
+.loader-logo {
+  animation: loader-pulse 1.6s ease-in-out infinite;
+}
+@keyframes loader-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.08); }
+}
+
+/* Page content transition */
+.page-content {
+  transition: opacity 0.6s ease;
+}
+.page-hidden {
+  opacity: 0;
+}
+.page-visible {
+  opacity: 1;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
