@@ -294,7 +294,6 @@ const LoaderEye = () => (
 );
 
 export default function Home() {
-  const [loading, setLoading] = useState(true);
   const [active, setActive] = useState(0);
   const trackRef = useRef<HTMLDivElement>(null);
   const logoRef = useRef<HTMLAnchorElement>(null);
@@ -307,12 +306,6 @@ export default function Home() {
   const revealKickRef = useRef<HTMLParagraphElement>(null);
   const startRef = useRef({ cx: 0, cy: 0, size: 56 });
   const mouseRef = useRef({ x: -9999, y: -9999 });
-
-  // Loader timer — eye animates for 2.5s, then fades out
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 2500);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     // easeInOutCubic
@@ -356,76 +349,34 @@ export default function Home() {
         hero.style.opacity = `${Math.max(opacity, 0)}`;
       }
 
-      // ── Tile spotlight: closest row to eye/mouse gets full color ──
-      const eyeLogo = logoRef.current;
-      if (eyeLogo) {
-        const logoRect = eyeLogo.getBoundingClientRect();
-        const eyeCy = logoRect.top + logoRect.height / 2;
-        const { y: my } = mouseRef.current;
-        const tiles = document.querySelectorAll('.tile-img');
-        if (tiles.length === 20) {
-          // 4 rows x 5 cols — get the avg Y of the first tile in each row
-          const rowAvgY: number[] = [];
-          for (let r = 0; r < 4; r++) {
-            let sum = 0;
-            for (let c = 0; c < 5; c++) {
-              const tr = tiles[r * 5 + c].getBoundingClientRect();
-              sum += tr.top + tr.height / 2;
-            }
-            rowAvgY.push(sum / 5);
+      // ── Tile spotlight: closest row to mouse cursor gets full color ──
+      const { y: my } = mouseRef.current;
+      const tiles = document.querySelectorAll('.tile-img');
+      if (tiles.length === 20) {
+        const rowAvgY: number[] = [];
+        for (let r = 0; r < 4; r++) {
+          let sum = 0;
+          for (let c = 0; c < 5; c++) {
+            const tr = tiles[r * 5 + c].getBoundingClientRect();
+            sum += tr.top + tr.height / 2;
           }
-          // Find the single closest row to the eye, and closest to the mouse
-          let eyeRow = -1, mouseRow = -1;
-          let eyeMin = Infinity, mouseMin = Infinity;
-          for (let r = 0; r < 4; r++) {
-            const eDist = Math.abs(eyeCy - rowAvgY[r]);
-            const mDist = Math.abs(my - rowAvgY[r]);
-            if (eDist < eyeMin) { eyeMin = eDist; eyeRow = r; }
-            if (mDist < mouseMin) { mouseMin = mDist; mouseRow = r; }
+          rowAvgY.push(sum / 5);
+        }
+        let mouseRow = -1;
+        let mouseMin = Infinity;
+        for (let r = 0; r < 4; r++) {
+          const mDist = Math.abs(my - rowAvgY[r]);
+          if (mDist < mouseMin) { mouseMin = mDist; mouseRow = r; }
+        }
+        tiles.forEach((tile, i) => {
+          const row = Math.floor(i / 5);
+          if (row === mouseRow) {
+            tile.classList.add('in-spotlight');
+          } else {
+            tile.classList.remove('in-spotlight');
           }
-          tiles.forEach((tile, i) => {
-            const row = Math.floor(i / 5);
-            if (row === eyeRow || row === mouseRow) {
-              tile.classList.add('in-spotlight');
-            } else {
-              tile.classList.remove('in-spotlight');
-            }
-          });
-        }
+        });
       }
-
-      // ── Eye logo: sits in the nav initially, then after the reveal section
-      //    ends it flies from the nav to the centre + shrinks. ──
-      const logo = logoRef.current;
-      const rv2 = revealRef.current;
-      if (logo && rv2) {
-        const revealBottom = rv2.getBoundingClientRect().bottom + window.scrollY;
-        const scrollPastReveal = Math.max(window.scrollY - revealBottom, 0);
-        const flyDist = window.innerHeight * 0.9;
-        const p = Math.min(scrollPastReveal / flyDist, 1);
-        const e = ease(p);
-        const { cx, cy, size } = startRef.current;
-
-        if (scrollPastReveal <= 0) {
-          // Before reveal ends: pin logo at its nav position
-          logo.style.transform = `translate3d(calc(-50% + ${cx - window.innerWidth / 2}px), calc(-50% + ${cy - window.innerHeight / 2}px), 0) scale(1)`;
-        } else {
-          // After reveal ends: fly from nav to centre + shrink
-          const dx = (1 - e) * (cx - window.innerWidth / 2);
-          const dy = (1 - e) * (cy - window.innerHeight / 2);
-          const endScale = size > 0 ? 42 / size : 0.75;
-          const scale = 1 + (endScale - 1) * e;
-          logo.style.transform = `translate3d(calc(-50% + ${dx}px), calc(-50% + ${dy}px), 0) scale(${scale})`;
-        }
-        logo.style.opacity = "1";
-      }
-
-      // ── Pupils roll with scroll — the eye-scroll motion (only after reveal). ──
-      const revealEnd = rv2 ? rv2.getBoundingClientRect().bottom + window.scrollY : 0;
-      const scrollAfterReveal = Math.max(window.scrollY - revealEnd, 0);
-      const rot = scrollAfterReveal * 0.18;
-      if (pLeftRef.current) pLeftRef.current.style.transform = `rotate(${rot}deg)`;
-      if (pRightRef.current) pRightRef.current.style.transform = `rotate(${rot}deg)`;
 
       // ── Brand reveal: blooms in from small to large (flower-like) as the
       //    section enters the viewport, then scales further as it scrolls past. ──
@@ -518,31 +469,15 @@ export default function Home() {
 
   return (
     <>
-      {/* ── Loader splash screen ──────────────────────────────────────── */}
-      <div className={`loader-screen${loading ? "" : " loader-done"}`}>
-        <div className="loader-logo">
-          <LoaderEye />
-        </div>
-      </div>
-
-      {/* ── Main content (fades in after loader) ──────────────────────── */}
-      <div className={`page-content${loading ? " page-hidden" : " page-visible"}`}>
-
-      {/* Eye logo — rests in the masthead logo slot, flies to the centre on
-          scroll and rides along while its pupils roll (the eye-scroll effect). */}
-      <a href={APP_URL} className="eye-logo" ref={logoRef} aria-label="TORU home">
-        <EyeLogo pupilLeft={pLeftRef} pupilRight={pRightRef} />
-      </a>
-
-      {/* ── Head — editorial masthead (cloned layout) ─────────────────────── */}
-      <header className="mag" ref={heroRef}>
-        <div className="mag-masthead">
+      {/* ── Sticky site navbar — stays fixed across the whole page ───────── */}
+      <header className="site-nav">
+        <div className="site-nav-inner">
           <a href={APP_URL} className="mag-logo" aria-label="TORU home">
+            <img src="/toru.png" alt="TORU" className="mag-logo-img" />
             <span className="eye-anchor" ref={anchorRef} />
           </a>
           <div className="mag-top-right">
             <nav className="mag-menu">
-              <span className="mag-menu-title">Menu</span>
               <a href="#about">About</a>
               <a href="#how-it-works">How it works</a>
               <a href="#features">Features</a>
@@ -550,7 +485,10 @@ export default function Home() {
             </nav>
           </div>
         </div>
+      </header>
 
+      {/* ── Head — editorial masthead (cloned layout) ─────────────────────── */}
+      <header className="mag" ref={heroRef}>
         <div className="mag-grid">
           {/* Lead story */}
           <section className="mag-feature">
@@ -644,7 +582,6 @@ export default function Home() {
       {/* ── Cinematic Footer ──────────────────────────────────────────── */}
       <CinematicFooter />
 
-      </div>{/* end .page-content */}
     </>
   );
 }

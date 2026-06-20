@@ -109,6 +109,12 @@
   opacity: 1;
 }
 
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--nav-h) + 1rem);
+  --nav-h: 64px;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -202,6 +208,39 @@ a {
 }
 
 /* ════════════════════════════════════════════════════════════════════════
+   Sticky site navbar — extracted out of the fading hero so it stays fixed
+   and visible across the entire page while scrolling.
+   ════════════════════════════════════════════════════════════════════════ */
+.site-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background-color: transparent;
+}
+.site-nav-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+  min-height: var(--nav-h);
+  padding: 0.5rem clamp(0.75rem, 2vw, 1.5rem);
+}
+/* Shrink the big masthead logo down to a proper navbar size */
+.site-nav .mag-logo-img {
+  width: clamp(40px, 4vw, 52px);
+}
+.site-nav .eye-anchor {
+  width: clamp(40px, 4vw, 52px);
+  height: auto;
+}
+.site-nav .mag-top-right {
+  padding-top: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════════════
    Head — editorial masthead (cloned layout). Scoped to .mag so no other
    section is affected.
    ════════════════════════════════════════════════════════════════════════ */
@@ -209,7 +248,7 @@ a {
   position: relative;
   z-index: 2;
   background-color: var(--paper);
-  padding: 1.75rem clamp(1.25rem, 4vw, 3rem) 3rem;
+  padding: calc(var(--nav-h) + 0.75rem) clamp(0.75rem, 2vw, 1.5rem) 3rem;
   will-change: filter, opacity;
 }
 
@@ -227,6 +266,7 @@ a {
   align-items: center;
   gap: 0.5rem;
   color: var(--green);
+  margin-left: -0.5rem;
 }
 .mag-logo .eye-anchor {
   width: clamp(56px, 7vw, 96px);
@@ -235,6 +275,11 @@ a {
 .mag-logo-mark {
   display: inline-flex;
   color: var(--green);
+}
+.mag-logo-img {
+  width: clamp(56px, 7vw, 96px);
+  height: auto;
+  object-fit: contain;
 }
 .mag-logo-text {
   font-family: var(--display);
@@ -291,10 +336,9 @@ a {
 /* Menu */
 .mag-menu {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.15rem;
-  text-align: right;
+  flex-direction: row;
+  align-items: center;
+  gap: 1.5rem;
 }
 .mag-menu-title {
   font-family: var(--display);
@@ -352,7 +396,7 @@ a {
   margin: 0 0 1.5rem;
 }
 .mag-feature {
-  margin-top: -2.5rem;
+  margin-top: 0;
 }
 .mag-feature-img {
   aspect-ratio: 1 / 1;
