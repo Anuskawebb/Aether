@@ -25,13 +25,13 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Toro — AI-Powered Autonomous Trading Terminal",
-  description: "Toro continuously tracks smart-money activity, evaluates risk, identifies opportunities, and executes trades autonomously through AI agents.",
-  keywords: ["copy trading", "AI agents", "Mantle", "DeFi", "on-chain trading", "toro", "toro agent", "non-custodial", "trading terminal", "smart money"],
-  authors: [{ name: "Toro" }],
+  title: "TORU — Autonomous on-chain copy-trading",
+  description: "Follow the best traders and let your TORU agent mirror their moves on-chain — non-custodial, 24/7, within the limits you set.",
+  keywords: ["copy trading", "AI agents", "Mantle", "DeFi", "on-chain trading", "toru", "non-custodial"],
+  authors: [{ name: "TORU" }],
   openGraph: {
-    title: "Toro — AI-Powered Autonomous Trading Terminal",
-    description: "Toro continuously tracks smart-money activity, evaluates risk, identifies opportunities, and executes trades autonomously through AI agents.",
+    title: "TORU — Autonomous on-chain copy-trading",
+    description: "Follow the best traders and let your TORU agent mirror their moves on-chain — non-custodial, 24/7, within the limits you set.",
     type: "website",
   },
 };
