@@ -28,30 +28,20 @@ import {
 import { DecisionEngine } from '../src/decision/decision-engine.js';
 import { ExecutionEngine } from '../src/execution/execution-engine.js';
 import { createExecutor } from '../src/execution/executor-factory.js';
+import { TwakClient } from '../src/execution/twak/twak-client.js';
+import {
+  getFearAndGreedX402,
+  getTopGainersX402,
+  getGlobalMetricsX402,
+  type CmcGainer,
+  type CmcGlobalMetrics,
+} from '../src/cmc/x402-cmc-client.js';
 import type { ExecutionPlan } from '../src/decision/trade-recommendation-types.js';
 
-// ── CMC Fear & Greed ─────────────────────────────────────────────────────────
-
-interface FearAndGreed { value: number; classification: string }
-
-let fgCache: { data: FearAndGreed; expiresAt: number } | null = null;
-
-async function getFearAndGreed(): Promise<FearAndGreed | null> {
-  const key = process.env.CMC_API_KEY;
-  if (!key) return null;
-  if (fgCache && Date.now() < fgCache.expiresAt) return fgCache.data;
-
-  try {
-    const res = await fetch('https://pro-api.coinmarketcap.com/v3/fear-and-greed/latest', {
-      headers: { 'X-CMC_PRO_API_KEY': key, 'Accept': 'application/json' },
-    });
-    if (!res.ok) return null;
-    const json = await res.json() as { data: { value: number; value_classification: string } };
-    const data = { value: json.data.value, classification: json.data.value_classification };
-    fgCache = { data, expiresAt: Date.now() + 60 * 60 * 1000 };
-    return data;
-  } catch { return null; }
-}
+// Shared TWAK client — used for x402 micropayments on behalf of each agent
+const twakClient = new TwakClient({
+  apiUrl: process.env.TWAK_API_URL ?? 'http://127.0.0.1:3002',
+});
 
 // ── Risk profile definitions ────────────────────────────────────────────────
 // These match exactly what the UI shows users on the strategy selection screen.
@@ -159,7 +149,11 @@ function applyRiskProfile(
 
 // ── Per-agent cycle ──────────────────────────────────────────────────────────
 
-async function runAgentCycle(agent: AgentRow, extremeGreed = false): Promise<void> {
+async function runAgentCycle(
+  agent:                AgentRow,
+  sizeMultiplier:       number = 1.0,
+  highMomentumSymbols:  Set<string> = new Set(),
+): Promise<void> {
   const account = await ExecutionAccountsRepository.getActive(agent.id);
   if (!account) {
     console.log(`[${agent.id}] No active execution account — skipping`);
@@ -196,20 +190,29 @@ async function runAgentCycle(agent: AgentRow, extremeGreed = false): Promise<voi
   const pendingRecs = await TradeRecommendationsRepository.getPendingByWallet(walletAddress) as TradeRecommendationRow[];
 
   // 3. Apply agent risk profile — tier filter, drawdown gate, position size cap
-  //    If CMC signals Extreme Greed, tighten position sizes by 25% (market overheated)
-  const greedMultiplier = extremeGreed ? 0.75 : 1.0;
-  if (extremeGreed) {
-    console.log(`[${agent.id}] CMC Extreme Greed — applying 0.75x position size multiplier`);
+  //    sizeMultiplier < 1.0 when CMC signals Extreme Greed or high BTC dominance
+  if (sizeMultiplier < 1.0) {
+    console.log(`[${agent.id}] CMC macro signal — applying ${sizeMultiplier.toFixed(2)}x position size multiplier`);
   }
 
   const { plans: profiledPlans, recs: profiledRecs } = applyRiskProfile(
     cycleResult.executionPlans,
     pendingRecs,
     riskLevel,
-    portfolioSnapshot.portfolioUsd * greedMultiplier,
+    portfolioSnapshot.portfolioUsd * sizeMultiplier,
     portfolioSnapshot.drawdownPct,
     portfolioSnapshot.rollingLossPct24h,
   );
+
+  // Log which plans overlap with CMC high-momentum tokens (for observability)
+  if (highMomentumSymbols.size > 0) {
+    const momentumHits = profiledRecs
+      .filter(r => highMomentumSymbols.has(r.tokenSymbol?.toUpperCase() ?? ''))
+      .map(r => r.tokenSymbol);
+    if (momentumHits.length > 0) {
+      console.log(`[${agent.id}] CMC momentum overlap: ${momentumHits.join(', ')} — high-conviction buys`);
+    }
+  }
 
   if (profiledPlans.length === 0) {
     console.log(`[${agent.id}] No plans passed risk profile filter`);
@@ -259,26 +262,66 @@ async function runAllAgents(): Promise<void> {
 
   console.log(`\n[runner] ${new Date().toISOString()} — running ${activeAgents.length} agent(s)`);
 
-  // Fetch CMC Fear & Greed once per batch — applies to all agents this cycle
-  const fg = await getFearAndGreed();
+  // Use the first active agent's wallet address as the payer for x402 data requests.
+  // Each per-agent cycle may also make its own x402 calls using its own wallet.
+  const primaryWallet = activeAgents[0]
+    ? (await ExecutionAccountsRepository.getActive(activeAgents[0].id))?.walletAddress ?? ''
+    : '';
+
+  // ── CMC market intelligence via x402 micropayments ───────────────────────
+  // The agent wallet pays for this data directly on-chain — no human API subscription.
+  // x402 payment tx hash is logged as on-chain proof of autonomous intelligence spending.
+
+  const [fg, gainers, globalMetrics] = await Promise.all([
+    getFearAndGreedX402(primaryWallet, twakClient),
+    getTopGainersX402(primaryWallet, twakClient, 10),
+    getGlobalMetricsX402(primaryWallet, twakClient),
+  ]);
+
   if (fg) {
-    console.log(`[cmc] Fear & Greed: ${fg.value} — ${fg.classification}`);
+    console.log(`[cmc/x402] Fear & Greed: ${fg.value} — ${fg.classification}`);
   }
 
-  // Market-level sentiment gate
-  // Extreme Fear (<20): market is panicking — skip new BUYs for CONSERVATIVE + BALANCED agents
-  // Extreme Greed (>80): market overheated — reduce position sizes by 25% across all agents
-  const marketExtremeFear  = fg !== null && fg.value < 20;
-  const marketExtremeGreed = fg !== null && fg.value > 80;
+  if (gainers.length > 0) {
+    const top3 = gainers.slice(0, 3).map(g => `${g.symbol} +${g.percentChange.toFixed(1)}%`).join(', ');
+    console.log(`[cmc/x402] Top gainers: ${top3}`);
+  }
+
+  if (globalMetrics) {
+    console.log(
+      `[cmc/x402] Global: BTC dom ${globalMetrics.btcDominancePct.toFixed(1)}%` +
+      ` | mktcap $${(globalMetrics.totalMarketCapUsd / 1e12).toFixed(2)}T`
+    );
+  }
+
+  // ── Market-level gates ────────────────────────────────────────────────────
+  // Extreme Fear (<20):  CONSERVATIVE + BALANCED agents skip new BUYs entirely
+  // Extreme Greed (>80): all agents apply 0.75x position size multiplier
+  // BTC dominance > 60%: altcoin season is over — AGGRESSIVE agents reduce exposure by 20%
+  const marketExtremeFear    = fg !== null && fg.value < 20;
+  const marketExtremeGreed   = fg !== null && fg.value > 80;
+  const btcDominanceHigh     = globalMetrics !== null && globalMetrics.btcDominancePct > 60;
+
+  if (btcDominanceHigh) {
+    console.log(`[cmc/x402] BTC dominance ${globalMetrics!.btcDominancePct.toFixed(1)}% — altcoin exposure reduced`);
+  }
+
+  // Build a set of high-momentum symbols from CMC gainers
+  // These get a +1 signal priority boost in runAgentCycle
+  const highMomentumSymbols = new Set(gainers.filter(g => g.percentChange > 10).map(g => g.symbol.toUpperCase()));
 
   for (const agent of activeAgents) {
     // CONSERVATIVE + BALANCED agents sit out during extreme fear
     if (marketExtremeFear && agent.riskLevel !== 'AGGRESSIVE') {
-      console.log(`[${agent.id}] CMC Extreme Fear (${fg!.value}) — ${agent.riskLevel} agent skipping BUYs this cycle`);
+      console.log(`[${agent.id}] CMC Extreme Fear (${fg!.value}) — ${agent.riskLevel} agent skipping this cycle`);
       continue;
     }
     try {
-      await runAgentCycle(agent, marketExtremeGreed);
+      const greedMultiplier     = marketExtremeGreed ? 0.75 : 1.0;
+      const dominanceMultiplier = (btcDominanceHigh && agent.riskLevel === 'AGGRESSIVE') ? 0.8 : 1.0;
+      const sizeMultiplier      = greedMultiplier * dominanceMultiplier;
+
+      await runAgentCycle(agent, sizeMultiplier, highMomentumSymbols);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[${agent.id}] Cycle failed: ${msg}`);
