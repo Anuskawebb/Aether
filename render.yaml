@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: aether-watcher
+    name: toro-watcher
     runtime: node
     rootDir: watcher
     plan: free
