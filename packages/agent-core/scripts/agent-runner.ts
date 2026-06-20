@@ -30,6 +30,29 @@ import { ExecutionEngine } from '../src/execution/execution-engine.js';
 import { createExecutor } from '../src/execution/executor-factory.js';
 import type { ExecutionPlan } from '../src/decision/trade-recommendation-types.js';
 
+// ── CMC Fear & Greed ─────────────────────────────────────────────────────────
+
+interface FearAndGreed { value: number; classification: string }
+
+let fgCache: { data: FearAndGreed; expiresAt: number } | null = null;
+
+async function getFearAndGreed(): Promise<FearAndGreed | null> {
+  const key = process.env.CMC_API_KEY;
+  if (!key) return null;
+  if (fgCache && Date.now() < fgCache.expiresAt) return fgCache.data;
+
+  try {
+    const res = await fetch('https://pro-api.coinmarketcap.com/v3/fear-and-greed/latest', {
+      headers: { 'X-CMC_PRO_API_KEY': key, 'Accept': 'application/json' },
+    });
+    if (!res.ok) return null;
+    const json = await res.json() as { data: { value: number; value_classification: string } };
+    const data = { value: json.data.value, classification: json.data.value_classification };
+    fgCache = { data, expiresAt: Date.now() + 60 * 60 * 1000 };
+    return data;
+  } catch { return null; }
+}
+
 // ── Risk profile definitions ────────────────────────────────────────────────
 // These match exactly what the UI shows users on the strategy selection screen.
 
@@ -136,7 +159,7 @@ function applyRiskProfile(
 
 // ── Per-agent cycle ──────────────────────────────────────────────────────────
 
-async function runAgentCycle(agent: AgentRow): Promise<void> {
+async function runAgentCycle(agent: AgentRow, extremeGreed = false): Promise<void> {
   const account = await ExecutionAccountsRepository.getActive(agent.id);
   if (!account) {
     console.log(`[${agent.id}] No active execution account — skipping`);
@@ -173,11 +196,17 @@ async function runAgentCycle(agent: AgentRow): Promise<void> {
   const pendingRecs = await TradeRecommendationsRepository.getPendingByWallet(walletAddress) as TradeRecommendationRow[];
 
   // 3. Apply agent risk profile — tier filter, drawdown gate, position size cap
+  //    If CMC signals Extreme Greed, tighten position sizes by 25% (market overheated)
+  const greedMultiplier = extremeGreed ? 0.75 : 1.0;
+  if (extremeGreed) {
+    console.log(`[${agent.id}] CMC Extreme Greed — applying 0.75x position size multiplier`);
+  }
+
   const { plans: profiledPlans, recs: profiledRecs } = applyRiskProfile(
     cycleResult.executionPlans,
     pendingRecs,
     riskLevel,
-    portfolioSnapshot.portfolioUsd,
+    portfolioSnapshot.portfolioUsd * greedMultiplier,
     portfolioSnapshot.drawdownPct,
     portfolioSnapshot.rollingLossPct24h,
   );
@@ -230,9 +259,26 @@ async function runAllAgents(): Promise<void> {
 
   console.log(`\n[runner] ${new Date().toISOString()} — running ${activeAgents.length} agent(s)`);
 
+  // Fetch CMC Fear & Greed once per batch — applies to all agents this cycle
+  const fg = await getFearAndGreed();
+  if (fg) {
+    console.log(`[cmc] Fear & Greed: ${fg.value} — ${fg.classification}`);
+  }
+
+  // Market-level sentiment gate
+  // Extreme Fear (<20): market is panicking — skip new BUYs for CONSERVATIVE + BALANCED agents
+  // Extreme Greed (>80): market overheated — reduce position sizes by 25% across all agents
+  const marketExtremeFear  = fg !== null && fg.value < 20;
+  const marketExtremeGreed = fg !== null && fg.value > 80;
+
   for (const agent of activeAgents) {
+    // CONSERVATIVE + BALANCED agents sit out during extreme fear
+    if (marketExtremeFear && agent.riskLevel !== 'AGGRESSIVE') {
+      console.log(`[${agent.id}] CMC Extreme Fear (${fg!.value}) — ${agent.riskLevel} agent skipping BUYs this cycle`);
+      continue;
+    }
     try {
-      await runAgentCycle(agent);
+      await runAgentCycle(agent, marketExtremeGreed);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[${agent.id}] Cycle failed: ${msg}`);
