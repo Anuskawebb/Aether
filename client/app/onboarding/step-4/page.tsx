@@ -1,99 +1,65 @@
 'use client'
 
-import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useOnboarding } from '@/context/onboarding-context'
+import { useOnboarding, type RiskTolerance, type TradingPreference } from '@/context/onboarding-context'
 import ProgressBar from '@/components/onboarding/progress-bar'
 import StepNavigation from '@/components/onboarding/step-navigation'
-import { Bot, Shield, Zap, CheckCircle2 } from 'lucide-react'
-import { ensureAgentWallet } from '@/lib/api'
+import { Check } from 'lucide-react'
 
-const AGENT_ID = process.env.NEXT_PUBLIC_TORO_AGENT_ID ?? 'toro-agent-001'
+const riskOptions: { id: RiskTolerance; label: string; desc: string; dotClass: string }[] = [
+  { id: 'LOW',    label: 'Low',    desc: 'Preserve capital, minimal drawdown',    dotClass: 'bg-green-positive' },
+  { id: 'MEDIUM', label: 'Medium', desc: 'Accept moderate swings for better returns', dotClass: 'bg-orange-accent' },
+  { id: 'HIGH',   label: 'High',   desc: 'Embrace volatility for max upside',     dotClass: 'bg-red-negative' },
+]
 
-const riskLabels: Record<string, string> = {
-  conservative: 'Conservative',
-  balanced: 'Balanced',
-  aggressive: 'Aggressive',
-}
+const modeOptions: { id: TradingPreference; label: string; desc: string }[] = [
+  { id: 'MANUAL',     label: 'Manual',     desc: 'You execute every trade yourself' },
+  { id: 'ASSISTED',   label: 'Assisted',   desc: 'Agent surfaces signals, you approve' },
+  { id: 'AUTONOMOUS', label: 'Autonomous', desc: 'Agent executes automatically 24/7' },
+]
 
-const modeLabels: Record<string, string> = {
-  autonomous: 'Autonomous',
-  assisted: 'Assisted',
+function RadioRow<T extends string>({
+  options, selected, onSelect,
+}: { options: { id: T; label: string; desc: string; dotClass?: string }[]; selected: T | null; onSelect: (v: T) => void }) {
+  return (
+    <div className="grid grid-cols-3 gap-2">
+      {options.map((o) => {
+        const isSelected = selected === o.id
+        return (
+          <button
+            key={o.id}
+            onClick={() => onSelect(o.id)}
+            className={`text-left p-3 bg-card border rounded-xl transition-all ${
+              isSelected ? 'border-orange-accent ring-1 ring-orange-accent/30' : 'border-border hover:border-muted-foreground/30'
+            }`}
+          >
+            <div className="flex items-start justify-between gap-1 mb-1.5">
+              {o.dotClass && <div className={`w-2 h-2 rounded-full mt-0.5 ${o.dotClass}`} />}
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                isSelected ? 'border-orange-accent bg-orange-accent' : 'border-border'
+              }`}>
+                {isSelected && <Check size={8} className="text-white" strokeWidth={3} />}
+              </div>
+            </div>
+            <div className="text-xs font-semibold text-foreground mb-0.5">{o.label}</div>
+            <div className="text-[10px] text-muted-foreground leading-relaxed">{o.desc}</div>
+          </button>
+        )
+      })}
+    </div>
+  )
 }
 
 export default function Step4Page() {
   const router = useRouter()
-  const { state, updateAgentWallet, reset } = useOnboarding()
-  const [creating, setCreating]   = useState(false)
-  const [done, setDone]           = useState(false)
-  const [error, setError]         = useState<string | null>(null)
+  const { state, updateRiskTolerance, updateTradingPreference, updateStep } = useOnboarding()
 
-  const handleCreate = async () => {
-    setCreating(true)
-    setError(null)
-    try {
-      const { account } = await ensureAgentWallet(AGENT_ID)
-      if (account) {
-        updateAgentWallet(account.walletAddress)
-      }
-      setDone(true)
-    } catch {
-      setError('Failed to provision wallet. Check that TWAK sidecar is running.')
-    } finally {
-      setCreating(false)
-    }
-  }
+  const canContinue = !!state.riskTolerance && !!state.tradingPreference
 
-  const handleGoToExecution = () => {
-    reset()
-    router.push('/execution-center')
-  }
-
-  if (done) {
-    return (
-      <div className="space-y-6">
-        {/* Success header */}
-        <div className="text-center py-6">
-          <div className="w-16 h-16 rounded-full bg-green-positive/10 border border-green-positive/20 flex items-center justify-center mx-auto mb-5">
-            <CheckCircle2 size={30} className="text-green-positive" />
-          </div>
-          <h2 className="text-2xl font-bold text-foreground mb-2">Agent Created</h2>
-          <p className="text-muted-foreground text-sm">
-            <span className="font-semibold text-foreground">{state.agentName}</span> is ready.
-            Fund your wallet to activate trading.
-          </p>
-        </div>
-
-        {/* Summary */}
-        <div className="bg-card border border-border rounded-xl divide-y divide-border">
-          <SummaryRow label="Agent Name"   value={state.agentName} />
-          <SummaryRow label="Strategy"     value={riskLabels[state.riskLevel ?? ''] ?? '—'} />
-          <SummaryRow label="Mode"         value={modeLabels[state.tradingMode ?? ''] ?? '—'} />
-          {state.agentWalletAddress
-            ? <SummaryRow label="Wallet" value={`${state.agentWalletAddress.slice(0,10)}…`} mono />
-            : <SummaryRow label="Wallet" value="Pending (fund in Execution Center)" />
-          }
-        </div>
-
-        {/* Next step hint */}
-        <div className="flex gap-3 p-4 bg-orange-accent/5 border border-orange-accent/15 rounded-xl">
-          <Zap size={14} className="text-orange-accent mt-0.5 shrink-0" />
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Next: open the <span className="text-foreground font-medium">Execution Center</span> and send BNB to your agent wallet to start trading.
-          </p>
-        </div>
-
-        {/* CTA — use inline style to guarantee color even without dark wrapper */}
-        <button
-          onClick={handleGoToExecution}
-          style={{ backgroundColor: 'var(--orange-accent)' }}
-          className="w-full flex items-center justify-center gap-2 px-6 py-4 text-white rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
-        >
-          <Zap size={15} />
-          Go to Execution Center
-        </button>
-      </div>
-    )
+  const handleContinue = () => {
+    if (!canContinue) return
+    updateStep(5)
+    router.push('/onboarding/step-5')
   }
 
   return (
@@ -101,69 +67,36 @@ export default function Step4Page() {
       <ProgressBar currentStep={4} />
 
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-foreground mb-2">Create your agent</h2>
+        <h2 className="text-2xl font-bold text-foreground mb-2">Risk &amp; trading style</h2>
         <p className="text-sm text-muted-foreground">
-          Review your configuration and launch <span className="text-foreground font-medium">{state.agentName || 'your agent'}</span>.
+          These defaults will pre-fill when you create agents. You can always override them per agent.
         </p>
       </div>
 
-      {/* Summary card */}
-      <div className="bg-card border border-border rounded-xl p-5 mb-6 space-y-3">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-lg bg-orange-accent/10 flex items-center justify-center">
-            <Bot size={18} className="text-orange-accent" />
+      <div className="space-y-6 mb-8">
+        <div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+            Risk Tolerance
           </div>
-          <div>
-            <div className="text-sm font-semibold text-foreground">{state.agentName || 'My Agent'}</div>
-            <div className="text-xs text-muted-foreground">Autonomous Trading Agent</div>
+          <RadioRow options={riskOptions} selected={state.riskTolerance} onSelect={updateRiskTolerance} />
+        </div>
+
+        <div>
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+            Trading Preference
           </div>
+          <RadioRow options={modeOptions} selected={state.tradingPreference} onSelect={updateTradingPreference} />
         </div>
-        <SummaryRow label="Strategy" value={riskLabels[state.riskLevel ?? ''] ?? '—'} />
-        <SummaryRow label="Trading Mode" value={modeLabels[state.tradingMode ?? ''] ?? '—'} />
-        <SummaryRow label="Network" value="BNB Smart Chain" />
       </div>
-
-      {/* What happens next */}
-      <div className="bg-secondary/50 border border-border rounded-xl p-4 mb-8 space-y-2.5">
-        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-widest mb-3">What happens next</div>
-        <InfoRow icon={Shield} text="An isolated agent wallet is provisioned on BSC via TWAK" />
-        <InfoRow icon={Bot} text="Your agent config is saved and ready to activate" />
-        <InfoRow icon={Zap} text="You'll fund the wallet in the Execution Center to start trading" />
-      </div>
-
-      {error && (
-        <div className="mb-6 p-3 bg-red-negative/10 border border-red-negative/30 rounded-lg text-xs text-red-negative">
-          {error}
-        </div>
-      )}
 
       <StepNavigation
         currentStep={4}
-        canGoBack={!creating}
-        canGoForward
-        onBack={() => { router.push('/onboarding/step-3') }}
-        onForward={handleCreate}
-        forwardButtonText="Create Agent"
-        loading={creating}
+        canGoBack
+        canGoForward={canContinue}
+        onBack={() => { updateStep(3); router.push('/onboarding/step-3') }}
+        onForward={handleContinue}
+        forwardButtonDisabled={!canContinue}
       />
-    </div>
-  )
-}
-
-function SummaryRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="flex items-center justify-between px-5 py-3.5 text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={`font-medium text-foreground ${mono ? 'font-mono text-xs' : ''}`}>{value}</span>
-    </div>
-  )
-}
-
-function InfoRow({ icon: Icon, text }: { icon: React.ElementType; text: string }) {
-  return (
-    <div className="flex items-start gap-3">
-      <Icon size={13} className="text-muted-foreground mt-0.5 shrink-0" />
-      <span className="text-xs text-muted-foreground">{text}</span>
     </div>
   )
 }

@@ -310,6 +310,9 @@ export interface AgentWallet {
   status:        string
   accountType:   string
   createdAt:     string | null
+  agentName:     string | null
+  riskLevel:     string | null
+  tradingMode:   string | null
 }
 
 export interface WalletBalance {
@@ -331,11 +334,23 @@ export interface WalletPortfolio {
   assets:        WalletAsset[]
 }
 
-export async function fetchAgentWallet(agentId: string): Promise<{ account: AgentWallet | null }> {
+// ---------------------------------------------------------------------------
+// Auth-aware fetch helpers (token is Privy JWT, included as Bearer header)
+// ---------------------------------------------------------------------------
+
+type TokenOpts = { token?: string | null }
+
+function authHeaders(token?: string | null): Record<string, string> {
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+export async function fetchAgentWallet(agentId: string, opts: TokenOpts = {}): Promise<{ account: AgentWallet | null }> {
   try {
-    const res = await fetch(`${base()}/api/agents/${agentId}/wallet`, { cache: 'no-store' })
-    if (res.status === 404) return { account: null }
-    if (!res.ok) return { account: null }
+    const res = await fetch(`${base()}/api/agents/${agentId}/wallet`, {
+      headers: authHeaders(opts.token),
+      cache:   'no-store',
+    })
+    if (res.status === 404 || !res.ok) return { account: null }
     const data = await res.json()
     return { account: data }
   } catch {
@@ -343,11 +358,20 @@ export async function fetchAgentWallet(agentId: string): Promise<{ account: Agen
   }
 }
 
-export async function ensureAgentWallet(agentId: string): Promise<{ account: AgentWallet | null }> {
+export async function ensureAgentWallet(
+  agentId: string,
+  config?: { agentName?: string; riskLevel?: string; tradingMode?: string },
+  opts:    TokenOpts = {},
+): Promise<{ account: AgentWallet | null }> {
   try {
     const res = await fetch(`${base()}/api/agents/${agentId}/wallet`, {
-      method: 'POST',
-      cache:  'no-store',
+      method:  'POST',
+      headers: {
+        ...authHeaders(opts.token),
+        ...(config ? { 'Content-Type': 'application/json' } : {}),
+      },
+      body:    config ? JSON.stringify(config) : undefined,
+      cache:   'no-store',
     })
     if (!res.ok) return { account: null }
     const data = await res.json()
@@ -357,10 +381,13 @@ export async function ensureAgentWallet(agentId: string): Promise<{ account: Age
   }
 }
 
-export async function fetchWalletBalance(agentId: string): Promise<WalletBalance> {
+export async function fetchWalletBalance(agentId: string, opts: TokenOpts = {}): Promise<WalletBalance> {
   const empty: WalletBalance = { nativeBalance: '0', nativeSymbol: 'BNB', usdValue: null, tokens: [], funded: false }
   try {
-    const res = await fetch(`${base()}/api/agents/${agentId}/wallet/balance`, { cache: 'no-store' })
+    const res = await fetch(`${base()}/api/agents/${agentId}/wallet/balance`, {
+      headers: authHeaders(opts.token),
+      cache:   'no-store',
+    })
     if (!res.ok) return empty
     return await res.json()
   } catch {
@@ -368,10 +395,13 @@ export async function fetchWalletBalance(agentId: string): Promise<WalletBalance
   }
 }
 
-export async function fetchWalletPortfolio(agentId: string): Promise<WalletPortfolio> {
+export async function fetchWalletPortfolio(agentId: string, opts: TokenOpts = {}): Promise<WalletPortfolio> {
   const empty: WalletPortfolio = { totalValueUsd: '0', assets: [] }
   try {
-    const res = await fetch(`${base()}/api/agents/${agentId}/wallet/portfolio`, { cache: 'no-store' })
+    const res = await fetch(`${base()}/api/agents/${agentId}/wallet/portfolio`, {
+      headers: authHeaders(opts.token),
+      cache:   'no-store',
+    })
     if (!res.ok) return empty
     return await res.json()
   } catch {
@@ -399,9 +429,12 @@ const emptyReadiness: ReadinessData = {
   status:             'PENDING',
 }
 
-export async function fetchReadiness(agentId: string): Promise<ReadinessData> {
+export async function fetchReadiness(agentId: string, opts: TokenOpts = {}): Promise<ReadinessData> {
   try {
-    const res = await fetch(`${base()}/api/agents/${agentId}/readiness`, { cache: 'no-store' })
+    const res = await fetch(`${base()}/api/agents/${agentId}/readiness`, {
+      headers: authHeaders(opts.token),
+      cache:   'no-store',
+    })
     if (!res.ok) return emptyReadiness
     return await res.json()
   } catch {

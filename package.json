@@ -11,7 +11,8 @@
     "contracts:test": "npm --prefix contracts/web3 run test",
     "contracts:deploy": "npm --prefix contracts/web3 run deploy",
     "indexer": "npm --prefix indexer run start",
-    "analytics-worker": "npm --prefix analytics-worker run start"
+    "analytics-worker": "npm --prefix analytics-worker run start",
+    "validate:twak": "npx tsx packages/agent-core/scripts/validate-twak.ts"
   },
   "dependencies": {
     "@privy-io/react-auth": "^3.29.2",

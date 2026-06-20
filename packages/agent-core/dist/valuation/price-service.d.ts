@@ -11,6 +11,11 @@ export declare class PriceService {
      */
     static clearCache(): void;
     /**
+     * Returns the BNB price in USD by looking up WBNB in the price DB.
+     * Returns 0 if not yet tracked (watcher must have observed WBNB pairs first).
+     */
+    static getBnbPrice(): Promise<number>;
+    /**
      * Primary entry point for Portfolio and Risk Engines.
      * Resolves the current price in USD.
      */

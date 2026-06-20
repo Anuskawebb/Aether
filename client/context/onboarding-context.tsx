@@ -2,30 +2,48 @@
 
 import React, { createContext, useContext, useState } from 'react'
 
+export type Experience        = 'BEGINNER' | 'INTERMEDIATE' | 'ADVANCED'
+export type Goals             = 'CAPITAL_PRESERVATION' | 'BALANCED_GROWTH' | 'AGGRESSIVE_GROWTH' | 'SPECULATIVE'
+export type RiskTolerance     = 'LOW' | 'MEDIUM' | 'HIGH'
+export type TradingPreference = 'MANUAL' | 'ASSISTED' | 'AUTONOMOUS'
+export type CapitalRange      = 'UNDER_100' | '100_TO_1000' | 'OVER_1000'
+
 export interface OnboardingState {
-  currentStep: number
-  agentName: string
-  riskLevel: 'conservative' | 'balanced' | 'aggressive' | null
-  tradingMode: 'autonomous' | 'assisted' | null
-  agentWalletAddress: string | null
+  currentStep:       number
+  username:          string
+  displayName:       string
+  profileImageUrl:   string
+  experience:        Experience        | null
+  goals:             Goals             | null
+  riskTolerance:     RiskTolerance     | null
+  tradingPreference: TradingPreference | null
+  capitalRange:      CapitalRange      | null
 }
 
 interface OnboardingContextType {
-  state: OnboardingState
-  updateStep: (step: number) => void
-  updateAgentName: (name: string) => void
-  updateRiskLevel: (level: 'conservative' | 'balanced' | 'aggressive') => void
-  updateTradingMode: (mode: 'autonomous' | 'assisted') => void
-  updateAgentWallet: (address: string) => void
-  reset: () => void
+  state:                 OnboardingState
+  updateStep:            (step: number)          => void
+  updateUsername:        (v: string)             => void
+  updateDisplayName:     (v: string)             => void
+  updateProfileImage:    (v: string)             => void
+  updateExperience:      (v: Experience)         => void
+  updateGoals:           (v: Goals)              => void
+  updateRiskTolerance:   (v: RiskTolerance)      => void
+  updateTradingPreference: (v: TradingPreference) => void
+  updateCapitalRange:    (v: CapitalRange)        => void
+  reset:                 () => void
 }
 
 const initialState: OnboardingState = {
-  currentStep: 1,
-  agentName: '',
-  riskLevel: null,
-  tradingMode: null,
-  agentWalletAddress: null,
+  currentStep:       1,
+  username:          '',
+  displayName:       '',
+  profileImageUrl:   '',
+  experience:        null,
+  goals:             null,
+  riskTolerance:     null,
+  tradingPreference: null,
+  capitalRange:      null,
 }
 
 const OnboardingContext = createContext<OnboardingContextType | undefined>(undefined)
@@ -33,17 +51,22 @@ const OnboardingContext = createContext<OnboardingContextType | undefined>(undef
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<OnboardingState>(initialState)
 
-  const updateStep        = (step: number)                                              => setState((p) => ({ ...p, currentStep: step }))
-  const updateAgentName   = (name: string)                                              => setState((p) => ({ ...p, agentName: name }))
-  const updateRiskLevel   = (level: 'conservative' | 'balanced' | 'aggressive')        => setState((p) => ({ ...p, riskLevel: level }))
-  const updateTradingMode = (mode: 'autonomous' | 'assisted')                          => setState((p) => ({ ...p, tradingMode: mode }))
-  const updateAgentWallet = (address: string)                                           => setState((p) => ({ ...p, agentWalletAddress: address }))
-  const reset             = ()                                                          => setState(initialState)
+  const set = <K extends keyof OnboardingState>(key: K, value: OnboardingState[K]) =>
+    setState((p) => ({ ...p, [key]: value }))
 
   return (
     <OnboardingContext.Provider value={{
-      state, updateStep, updateAgentName, updateRiskLevel,
-      updateTradingMode, updateAgentWallet, reset,
+      state,
+      updateStep:              (v) => set('currentStep',       v),
+      updateUsername:          (v) => set('username',          v),
+      updateDisplayName:       (v) => set('displayName',       v),
+      updateProfileImage:      (v) => set('profileImageUrl',   v),
+      updateExperience:        (v) => set('experience',        v),
+      updateGoals:             (v) => set('goals',             v),
+      updateRiskTolerance:     (v) => set('riskTolerance',     v),
+      updateTradingPreference: (v) => set('tradingPreference', v),
+      updateCapitalRange:      (v) => set('capitalRange',      v),
+      reset:                   ()  => setState(initialState),
     }}>
       {children}
     </OnboardingContext.Provider>

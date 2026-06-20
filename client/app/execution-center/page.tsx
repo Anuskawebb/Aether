@@ -1,11 +1,9 @@
 import TopNavigation from '@/components/navigation/top-nav'
 import { fetchExecutionCenter } from '@/lib/api'
 import { Check, Clock, AlertCircle, X, Activity } from 'lucide-react'
-import WalletReadiness from '@/components/execution/wallet-readiness'
+import UserWalletReadiness from '@/components/execution/user-wallet-readiness'
 
 export const dynamic = 'force-dynamic'
-
-const AGENT_ID = process.env.TORO_AGENT_ID ?? 'toro-agent-001'
 
 export default async function ExecutionCenterPage() {
   const { stats, queue } = await fetchExecutionCenter()
@@ -39,8 +37,8 @@ export default async function ExecutionCenterPage() {
             ))}
           </div>
 
-          {/* Wallet Readiness — live-updating client component */}
-          <WalletReadiness agentId={AGENT_ID} />
+          {/* Wallet Readiness — scoped to the current authenticated user's agent */}
+          <UserWalletReadiness />
 
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mb-8">
             {/* Execution Queue */}

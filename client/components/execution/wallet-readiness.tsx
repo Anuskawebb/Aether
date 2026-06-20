@@ -6,6 +6,7 @@ import {
   fetchWalletBalance,
   fetchWalletPortfolio,
   fetchReadiness,
+  ensureAgentWallet,
   type AgentWallet,
   type WalletBalance,
   type WalletPortfolio,
@@ -15,7 +16,7 @@ import {
   Check, X, Copy, Wallet, TrendingUp, Activity,
   AlertTriangle, Zap, RefreshCw, CircleDot, Play, Plus, Loader2,
 } from 'lucide-react'
-import { ensureAgentWallet } from '@/lib/api'
+import { useAuth } from '@/context/auth-context'
 
 const POLL_INTERVAL = 15_000
 
@@ -51,22 +52,24 @@ function Skeleton() {
 }
 
 export default function WalletReadiness({ agentId }: Props) {
-  const [account,     setAccount]     = useState<AgentWallet | null>(null)
-  const [balance,     setBalance]     = useState<WalletBalance | null>(null)
-  const [portfolio,   setPortfolio]   = useState<WalletPortfolio | null>(null)
-  const [readiness,   setReadiness]   = useState<ReadinessData | null>(null)
-  const [loading,     setLoading]     = useState(true)
-  const [lastRefresh, setLastRefresh] = useState<Date | null>(null)
-  const [copied,      setCopied]      = useState(false)
-  const [provisioning, setProvisioning] = useState(false)
-  const [provisionErr, setProvisionErr] = useState<string | null>(null)
+  const { getToken }                       = useAuth()
+  const [account,     setAccount]          = useState<AgentWallet | null>(null)
+  const [balance,     setBalance]          = useState<WalletBalance | null>(null)
+  const [portfolio,   setPortfolio]        = useState<WalletPortfolio | null>(null)
+  const [readiness,   setReadiness]        = useState<ReadinessData | null>(null)
+  const [loading,     setLoading]          = useState(true)
+  const [lastRefresh, setLastRefresh]      = useState<Date | null>(null)
+  const [copied,      setCopied]           = useState(false)
+  const [provisioning, setProvisioning]    = useState(false)
+  const [provisionErr, setProvisionErr]    = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
+    const token = await getToken()
     const [a, b, p, r] = await Promise.all([
-      fetchAgentWallet(agentId),
-      fetchWalletBalance(agentId),
-      fetchWalletPortfolio(agentId),
-      fetchReadiness(agentId),
+      fetchAgentWallet(agentId,     { token }),
+      fetchWalletBalance(agentId,   { token }),
+      fetchWalletPortfolio(agentId, { token }),
+      fetchReadiness(agentId,       { token }),
     ])
     setAccount(a.account)
     setBalance(b)
@@ -86,9 +89,10 @@ export default function WalletReadiness({ agentId }: Props) {
     setProvisioning(true)
     setProvisionErr(null)
     try {
-      const { account } = await ensureAgentWallet(agentId)
+      const token = await getToken()
+      const { account } = await ensureAgentWallet(agentId, undefined, { token })
       if (!account) {
-        setProvisionErr('TWAK sidecar is not reachable. Start it at http://127.0.0.1:3000 then try again.')
+        setProvisionErr('TWAK sidecar is not reachable. Start it at http://127.0.0.1:3002 then try again.')
       } else {
         await refresh()
       }

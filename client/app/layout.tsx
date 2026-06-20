@@ -2,6 +2,9 @@ import { Analytics } from '@vercel/analytics/next'
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { ThemeProvider } from 'next-themes'
+import ToroPrivyProvider from '@/providers/privy-provider'
+import { AuthProvider } from '@/context/auth-context'
+import AuthGate from '@/components/auth/auth-gate'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -46,7 +49,13 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.className} antialiased bg-background text-foreground`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
+          <ToroPrivyProvider>
+            <AuthProvider>
+              <AuthGate>
+                {children}
+              </AuthGate>
+            </AuthProvider>
+          </ToroPrivyProvider>
           {process.env.NODE_ENV === 'production' && <Analytics />}
         </ThemeProvider>
       </body>

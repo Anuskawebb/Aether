@@ -1,5 +1,7 @@
 import { db, tokenPrices, eq } from '@toro/db';
 import { computeConfidenceBreakdown } from './price-types.js';
+// WBNB on BSC — the price DB tracks this as the BNB price proxy
+const WBNB_BSC = '0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c';
 export class PriceService {
     static cache = new Map();
     static cacheTTLMs = 5000; // 5 seconds default cache TTL
@@ -14,6 +16,13 @@ export class PriceService {
      */
     static clearCache() {
         this.cache.clear();
+    }
+    /**
+     * Returns the BNB price in USD by looking up WBNB in the price DB.
+     * Returns 0 if not yet tracked (watcher must have observed WBNB pairs first).
+     */
+    static async getBnbPrice() {
+        return this.getPrice(WBNB_BSC);
     }
     /**
      * Primary entry point for Portfolio and Risk Engines.

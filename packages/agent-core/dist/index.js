@@ -12,5 +12,7 @@ export { buildExecutionPlan, buildExecutionPlans, } from './decision/execution-p
 export { DecisionEngine, } from './decision/decision-engine.js';
 export { PositionRegistryService, } from './position/position-registry-service.js';
 export { MockExecutor, } from './execution/mock-executor.js';
+export { TwakExecutor, } from './execution/twak-executor.js';
+export { createExecutor, } from './execution/executor-factory.js';
 export { ExecutionEngine, } from './execution/execution-engine.js';
 //# sourceMappingURL=index.js.map

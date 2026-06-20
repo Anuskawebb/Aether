@@ -13,7 +13,9 @@
   },
   "dependencies": {
     "@toro/db": "file:../db",
-    "drizzle-orm": "^0.31.2"
+    "dotenv": "^17.4.2",
+    "drizzle-orm": "^0.31.2",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^20.14.0",

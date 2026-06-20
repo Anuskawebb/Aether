@@ -4,6 +4,8 @@ import { Bell, Settings } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import ThemeToggle from '@/components/theme-toggle'
+import LoginButton from '@/components/auth/login-button'
+import UserMenu from '@/components/auth/user-menu'
 
 export default function TopNavigation() {
   const pathname = usePathname()
@@ -53,7 +55,7 @@ export default function TopNavigation() {
         </nav>
 
         {/* Right actions */}
-        <div className="flex items-center gap-4 flex-shrink-0">
+        <div className="flex items-center gap-3 flex-shrink-0">
           <ThemeToggle />
           <button className="p-2 hover:bg-secondary rounded transition-colors">
             <Bell size={18} className="text-muted-foreground" />
@@ -61,6 +63,8 @@ export default function TopNavigation() {
           <Link href="/settings" className="p-2 hover:bg-secondary rounded transition-colors">
             <Settings size={18} className="text-muted-foreground" />
           </Link>
+          <LoginButton />
+          <UserMenu />
         </div>
       </div>
     </header>

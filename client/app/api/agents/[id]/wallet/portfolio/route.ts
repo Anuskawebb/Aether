@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { twakGetPortfolio } from '@/lib/twak'
+import { requireAgentOwnership } from '@/lib/server-auth'
 
 export const dynamic = 'force-dynamic'
 
 interface RouteParams { params: Promise<{ id: string }> }
 
-export async function GET(_req: NextRequest, { params: paramsPromise }: RouteParams) {
+export async function GET(req: NextRequest, { params: paramsPromise }: RouteParams) {
   const params = await paramsPromise
+
+  const ownership = await requireAgentOwnership(req, params.id)
+  if (ownership instanceof NextResponse) return ownership
+
   try {
     const portfolio = await twakGetPortfolio()
 

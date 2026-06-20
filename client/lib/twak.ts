@@ -52,8 +52,24 @@ export async function twakGetBalance(): Promise<{ balance: string; symbol: strin
     const addr = await twakGetAddress()
     if (!addr) return null
     const res = await twakRequest<any>('wallet_balance', { chain: BSC_CHAIN, address: addr })
+
+    // TWAK returns balance as an object with wei values: { available, staked, pending, total }
+    // or as a plain string/number. Normalise to a BNB decimal string.
+    let rawWei: string
+    if (typeof res.balance === 'object' && res.balance !== null) {
+      rawWei = String(
+        res.balance.available ?? res.balance.total ?? res.balance.amount ?? res.balance.value ?? '0'
+      )
+    } else {
+      rawWei = String(res.balance ?? '0')
+    }
+
+    // Convert from wei to BNB if the value looks like wei (> 1e12 for anything ≥ 0.000001 BNB)
+    const raw = parseFloat(rawWei)
+    const bnb = raw > 1e12 ? raw / 1e18 : raw
+
     return {
-      balance:  typeof res.balance === 'object' ? (res.balance.amount ?? res.balance.value ?? '0') : (res.balance ?? '0'),
+      balance:  bnb.toFixed(8),
       symbol:   res.symbol ?? 'BNB',
       usdValue: res.usdValue ?? res.fiatValue,
     }

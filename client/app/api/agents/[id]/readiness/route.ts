@@ -2,13 +2,17 @@ import { NextRequest, NextResponse } from 'next/server'
 import sql from '@/lib/db'
 import { twakIsReachable, twakGetAddress, twakGetBalance } from '@/lib/twak'
 import { computeReadiness } from '@/lib/readiness'
+import { requireAgentOwnership } from '@/lib/server-auth'
 
 export const dynamic = 'force-dynamic'
 
 interface RouteParams { params: Promise<{ id: string }> }
 
-export async function GET(_req: NextRequest, { params: paramsPromise }: RouteParams) {
+export async function GET(req: NextRequest, { params: paramsPromise }: RouteParams) {
   const { id: agentId } = await paramsPromise
+
+  const ownership = await requireAgentOwnership(req, agentId)
+  if (ownership instanceof NextResponse) return ownership
 
   try {
     // Parallel fetch: DB wallet record + TWAK liveness + balance

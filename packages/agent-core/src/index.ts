@@ -96,6 +96,14 @@ export {
 } from './execution/mock-executor.js';
 
 export {
+  TwakExecutor,
+} from './execution/twak-executor.js';
+
+export {
+  createExecutor,
+} from './execution/executor-factory.js';
+
+export {
   ExecutionEngine,
   type ExecutionEngineConfig,
   type ExecutionCycleResult,
