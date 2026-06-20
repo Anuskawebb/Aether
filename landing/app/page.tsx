@@ -16,13 +16,14 @@ const ArrowIcon = () => (
 
 // Original app logo (the cloud/swirl mark). Uses currentColor so it inherits
 // the brand-mark colour.
-const ToruMark = ({ size = 26 }: { size?: number }) => (
+const ToruMark = ({ size = 26, className }: { size?: number; className?: string }) => (
   <svg
     width={size}
     height={Math.round(size * (400 / 520))}
     viewBox="0 0 520 400"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
+    className={className}
   >
     <path
       fill="currentColor"
@@ -31,6 +32,10 @@ const ToruMark = ({ size = 26 }: { size?: number }) => (
     />
   </svg>
 );
+
+// Re-exported under the "Toro" spelling so modules that do
+// `import { ToroMark }` (e.g. terminal/page.tsx) resolve correctly.
+export { ToruMark as ToroMark };
 
 // Animated "eye" version of the logo — same cloud, but the two sockets are
 // hollow and each pupil is a separate <g> we can orbit (the eye-scroll motion).
